@@ -1,0 +1,87 @@
+html, body, #app, .app-provider { height: 100%; min-height: 0; margin: 0; }
+body { min-width: 760px; font-synthesis: none; }
+* { box-sizing: border-box; }
+h1, h2, p { margin: 0; }
+.app-frame { --summary-padding: 6px 14px; --control-padding: 12px 14px; height: 100%; padding: 12px; display: grid; grid-template-rows: 44px 76px minmax(0, 1fr) 30px; gap: 12px; }
+.toolbar { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.brand strong { font-size: 16px; font-weight: 500; white-space: nowrap; }
+.device-trigger { width: clamp(180px, 26vw, 260px); min-width: 0; }
+.trigger-label { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 205px; }
+.toolbar-spacer { flex: 1; min-width: 0; }
+.auto-control, .axis-control { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+.secondary-text { font-size: 12px; line-height: 18px; }
+.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; display: block; }
+.device-summary { height: 76px; min-width: 0; }
+.device-summary > .summary-content { display: grid; grid-template-columns: minmax(0, 1fr) 190px; align-items: center; gap: 18px; }
+.summary-identity { min-width: 0; }
+.summary-identity h1 { font-size: 18px; font-weight: 500; line-height: 26px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.summary-meta { display: flex; align-items: center; gap: 9px; min-width: 0; margin-top: 3px; }
+.connection-label { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; min-width: 0; }
+.summary-battery { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.battery-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.battery-value { font-size: 23px; line-height: 26px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.battery-value > span { font-size: 12px; margin-left: 3px; }
+.no-device-summary > .summary-content { display: flex; gap: 12px; }
+.settings-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; min-width: 0; min-height: 0; height: min(100%, 280px); align-self: start; }
+.control-panel { height: 100%; min-width: 0; }
+.control-panel > .control-panel-content { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 34px; }
+.panel-heading h2 { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 500; white-space: nowrap; }
+.reading { display: flex; align-items: baseline; justify-content: flex-end; gap: 5px; min-width: 0; }
+.readout { font-size: 26px; line-height: 32px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.readout > span { font-size: 18px; }
+.control-form { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+.form-content { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.field-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 22px; font-size: 14px; }
+.dpi-fields { display: flex; gap: 8px; min-width: 0; }
+.dpi-fields > * { flex: 1; min-width: 0; }
+.preset-row { display: flex; align-items: center; gap: 8px; min-height: 26px; }
+.preset-row > * { flex: 1; min-width: 0; }
+.range-row { display: flex; align-items: center; gap: 6px; min-height: 20px; }
+.range-row > :first-child { flex: 1; }
+.panel-footer { margin-top: auto; display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 30px; }
+.panel-footer > :first-child { min-width: 0; }
+.panel-footer > :last-child { flex-shrink: 0; }
+.panel-footer > .single-line-button { flex: 1; }
+.single-line-button { max-width: 100%; min-width: 0; }
+.single-line-button .n-button__content { min-width: 0; width: 100%; justify-content: flex-start; }
+.rate-options.n-radio-group { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; width: 100%; }
+.rate-note { margin-top: 3px; }
+.status-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-width: 0; min-height: 30px; }
+.status-copy { flex: 1; min-width: 0; white-space: nowrap; }
+.feedback-button { flex: 1; min-width: 0; max-width: calc(100% - 80px); }
+.feedback-button .n-button__content { min-width: 0; width: 100%; justify-content: flex-start; }
+.feedback-more { margin-left: 10px; flex-shrink: 0; font-size: 12px; }
+.status-bar > :last-child { flex-shrink: 0; }
+.empty-panel { min-height: 0; height: min(100%, 280px); align-self: start; }
+.empty-panel > .empty-panel-content { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 13px; text-align: center; }
+.empty-panel h2 { font-size: 18px; font-weight: 500; }
+.device-picker { display: flex; flex-direction: column; gap: 10px; }
+.picker-heading { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+.device-options { display: flex; flex-direction: column; gap: 6px; }
+.device-option-label { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; line-height: 17px; min-width: 0; }
+.device-option-label > span { width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.device-options .n-button__content { width: 100%; min-width: 0; }
+.device-picker > .n-pagination { align-self: flex-end; }
+.text-viewer { width: min(620px, calc(100vw - 32px)); }
+.document-page { min-height: 180px; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 14px; line-height: 23px; tab-size: 4; user-select: text; }
+.viewer-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+@media (max-height: 510px) {
+  .app-frame { --summary-padding: 4px 12px; --control-padding: 10px 12px; padding: 10px; grid-template-rows: 40px 72px minmax(0, 1fr) 28px; gap: 8px; }
+  .device-summary { height: 72px; }
+  .control-panel > .control-panel-content { gap: 7px; }
+  .control-form { gap: 8px; }
+  .form-content { gap: 6px; }
+  .status-bar { min-height: 28px; }
+}
+@media (max-width: 800px) {
+  .toolbar { gap: 9px; }
+  .device-trigger { width: 190px; }
+  .trigger-label { max-width: 145px; }
+  .readout { font-size: 24px; }
+  .readout > span { font-size: 16px; }
+  .reading { gap: 4px; }
+  .panel-heading { gap: 8px; }
+  .summary-battery { width: 175px; justify-self: end; }
+}

@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.png binary
+*.woff2 binary
+/go/gui_assets/index.html linguist-generated=true -whitespace
+/frontend/bun.lock linguist-generated=true
+/docs/THIRD_PARTY_NOTICES.txt linguist-vendored=true -whitespace
+/frontend/src/assets/NotoSansSC-OFL.txt linguist-vendored=true -whitespace

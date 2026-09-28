@@ -1,0 +1,8 @@
+/* Noto Sans SC 官方可变字体子集；本地内嵌，无网络请求。许可见 assets/NotoSansSC-OFL.txt。 */
+@font-face {
+  font-family: 'Mouse UI Sans';
+  src: url('./assets/MouseUISans.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: block;
+}

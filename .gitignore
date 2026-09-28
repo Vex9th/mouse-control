@@ -1,0 +1,42 @@
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# 本地依赖、缓存与构建输出
+.cache/
+__pycache__/
+*.py[cod]
+node_modules/
+/frontend/dist/
+/dist/
+/build/
+/builds/
+*.exe
+*.test
+*.log
+*.tmp
+*.zip
+*.tar
+*.tar.gz
+
+# 本机配置与凭据
+.env
+.env.*
+*.pem
+*.key
+
+# 本地历史资料与实验，不进入发布仓库
+/openrazer/
+/HANDOFF.md
+/RazerBattery.py
+/razer_battery_poc.py
+/docs/verification/
+/docs/plans/
+/docs/superpowers/
+/docs/MIGRATION.md
+/docs/CLI_DESIGN.md
+/docs/LOGITECH_RESEARCH.md
+/docs/SUPPORTED_DEVICES.md
