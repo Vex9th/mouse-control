@@ -1,0 +1,182 @@
+name: Windows 构建与发布
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+# 普通提交、PR 和手动构建只有只读权限；发布权限仅在末尾独立任务中授予。
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.event.pull_request.number || github.ref }}
+  # 分支的新提交替代旧构建；标签发布不在上传资产过程中被另一次运行取消。
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+env:
+  PYTHONUTF8: '1'
+  GOTOOLCHAIN: local
+  CGO_ENABLED: '0'
+  # 真机读取、设置及 WebView2/鼠标集成测试只能在人工验证环境启用。
+  RAZER_HARDWARE_TEST: '0'
+  RAZER_SETTINGS_TEST: '0'
+  RAZER_GUI_TEST: '0'
+
+jobs:
+  build:
+    name: Windows x64 · 测试、GUI 与 CLI
+    runs-on: windows-latest
+    timeout-minutes: 25
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      artifact-id: ${{ steps.artifact.outputs.artifact-id }}
+    env:
+      RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+      GOOS: windows
+      GOARCH: amd64
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      # 以下 SHA 已对照各维护者官方 release tag 核实；升级时同时更新版本和 SHA。
+      # https://github.com/actions/checkout/releases/tag/v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 校验源码及标签版本
+        id: version
+        run: |
+          $version = python scripts/release-package.py version
+          if ($LASTEXITCODE -ne 0) { throw '源码或标签版本检查失败' }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      # https://github.com/actions/setup-node/releases/tag/v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      # https://github.com/oven-sh/setup-bun/releases/tag/v2.2.0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: '1.3.11'
+
+      # https://github.com/actions/setup-go/releases/tag/v7.0.0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go/go.mod
+          cache-dependency-path: go/go.sum
+          architecture: x64
+
+      - name: 验证打包脚本
+        run: python -m unittest discover -s scripts -p 'test_*.py' -v
+
+      - name: 验证构建清理保护
+        run: powershell -NoProfile -File scripts/test-prune-builds.ps1
+
+      - name: 前端测试、类型检查、字体校验与 GUI 构建
+        # 内部使用 bun install --frozen-lockfile、bun test、vue-tsc 和 Vite。
+        # 构建脚本同时校验字体覆盖/哈希、单 HTML 的 1,900,000 字节上限。
+        run: python scripts/build-gui.py
+
+      - name: Windows Go 测试（不连接鼠标）
+        working-directory: go
+        run: go test -tags gui -count=1 ./...
+
+      - name: Windows Go 静态检查
+        working-directory: go
+        run: go vet -tags gui ./...
+
+      - name: 构建 CLI
+        working-directory: go
+        run: go build -trimpath '-ldflags=-s -w' -o ../dist/RazerBattery.exe .
+
+      - name: 收集 CLI 帮助并打包
+        run: |
+          python -c "import pathlib, subprocess; pathlib.Path('dist/CLI_HELP.txt').write_bytes(subprocess.check_output(['dist/RazerBattery.exe', '-h'], stdin=subprocess.DEVNULL, timeout=30))"
+          if ($LASTEXITCODE -ne 0) { throw 'CLI 帮助导出失败' }
+          python scripts/release-package.py package
+
+      # https://github.com/actions/upload-artifact/releases/tag/v7.0.1
+      - name: 保存便携包（7 天）
+        id: artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-x64-${{ steps.version.outputs.version }}-${{ github.run_attempt }}
+          path: dist/release/*
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+          overwrite: false
+
+  release:
+    name: 发布版本标签
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ github.ref_name }}
+      RELEASE_VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      # 只接收本次 Windows 构建的不可变 artifact，不检出或执行 PR 源码。
+      # https://github.com/actions/download-artifact/releases/tag/v8.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+          path: release
+          merge-multiple: true
+          digest-mismatch: error
+
+      - name: 核对发布版本及资产校验和
+        working-directory: release
+        shell: bash
+        run: |
+          test "$RELEASE_TAG" = "v$RELEASE_VERSION"
+          test -s "MouseControl-$RELEASE_VERSION-windows-x64.zip"
+          test -s "RazerBattery-$RELEASE_VERSION-windows-x64.zip"
+          test -s THIRD_PARTY_NOTICES.txt
+          sha256sum --check --strict SHA256SUMS.txt
+
+      - name: 拒绝覆盖已有 Release
+        shell: python
+        run: |
+          import os
+          import urllib.error
+          import urllib.request
+          url = f"https://api.github.com/repos/{os.environ['GH_REPO']}/releases/tags/{os.environ['RELEASE_TAG']}"
+          request = urllib.request.Request(url, headers={
+              "Authorization": "Bearer " + os.environ["GH_TOKEN"],
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+          })
+          try:
+              with urllib.request.urlopen(request, timeout=30):
+                  pass
+          except urllib.error.HTTPError as error:
+              if error.code != 404:
+                  raise
+          else:
+              raise SystemExit("该标签已有 Release；为保护已发布资产，本次发布停止。请使用新版本标签。")
+
+      - name: 新建 Release 并上传全部资产
+        working-directory: release
+        shell: bash
+        # gh create 带资产时先创建草稿，全部上传成功后才公开；不使用 --clobber。
+        # https://cli.github.com/manual/gh_release_create
+        run: |
+          options=()
+          if [[ "$RELEASE_VERSION" == *-* ]]; then options+=(--prerelease); fi
+          gh release create "$RELEASE_TAG" \
+            --verify-tag --title "$RELEASE_TAG" --generate-notes "${options[@]}" \
+            "MouseControl-$RELEASE_VERSION-windows-x64.zip" \
+            "RazerBattery-$RELEASE_VERSION-windows-x64.zip" \
+            SHA256SUMS.txt THIRD_PARTY_NOTICES.txt
