@@ -16,8 +16,8 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `MouseControl-1.5.1-windows-x64.zip` | 桌面版；解压后打开 `MouseControl.exe` |
-| `RazerBattery-1.5.1-windows-x64.zip` | 命令行版，包含使用帮助和第三方许可；解压后运行 `RazerBattery.exe` |
+| `MouseControl-1.5.2-windows-x64.zip` | 桌面版；解压后打开 `MouseControl.exe` |
+| `RazerBattery-1.5.2-windows-x64.zip` | 命令行版，包含使用帮助和第三方许可；解压后运行 `RazerBattery.exe` |
 | `SHA256SUMS.txt` | 下载文件的 SHA256 校验值 |
 
 桌面版使用系统 **Microsoft Edge WebView2 Runtime**。Windows 11 包含该运行时；缺少时可从 [Microsoft 官方页面](https://developer.microsoft.com/microsoft-edge/webview2/) 安装 Evergreen Runtime。使用程序无需 Node.js、Python 或 Go。

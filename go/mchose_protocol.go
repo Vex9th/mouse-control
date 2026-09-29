@@ -117,9 +117,7 @@ func (m *mchoseMouse) readIdentity() ([]byte, error) {
 	if vid != mchoseVID || !mchoseIdentityMatches(m.usbPID, pid) || (m.reportedPID != 0 && m.reportedPID != pid) {
 		return nil, fmt.Errorf("迈从设备身份不符：USB PID %04X，响应 %04X:%04X；请重新扫描", m.usbPID, vid, pid)
 	}
-	if p[4] == 0 || p[4] > 3 {
-		return nil, fmt.Errorf("%w：迈从配置数量 %d 尚未适配", errFrame, p[4])
-	}
+	// 官网保留 P[4] 的 maxConfigNum 原值；它不是身份校验或可查询配置索引的上限。
 	return p, nil
 }
 func (m *mchoseMouse) Features() mouseFeatures {
@@ -157,7 +155,13 @@ func (m *mchoseMouse) readPerformance() (mchosePerformance, error) {
 	if e != nil {
 		return mchosePerformance{}, e
 	}
-	if len(p) < 9 || p[0] > 2 || p[1]&15 > 5 {
+	if len(p) < 9 {
+		return mchosePerformance{}, fmt.Errorf("%w：迈从性能信息不足 9 字节", errFrame)
+	}
+	if p[0] > 2 {
+		return mchosePerformance{}, fmt.Errorf("%w：迈从当前配置索引 %d 尚未适配，仅确认索引 0–2", errFrame, p[0])
+	}
+	if p[1]&15 > 5 {
 		return mchosePerformance{}, fmt.Errorf("%w：迈从性能字段无效", errFrame)
 	}
 	return mchosePerformance{p[0], p[1] & 15, p[1] >> 4}, nil

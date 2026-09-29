@@ -16,6 +16,7 @@ type mchoseSimulator struct {
 	mu                       sync.Mutex
 	pid                      uint16
 	battery, charge          byte
+	maxConfigNum             byte
 	profile, index, rateCode byte
 	separate                 bool
 	x, y                     uint16
@@ -27,7 +28,7 @@ type mchoseSimulator struct {
 }
 
 func newMchoseSimulator() *mchoseSimulator {
-	return &mchoseSimulator{pid: 0x4035, battery: 76, charge: 1, profile: 1, index: 2, rateCode: 6, separate: true, x: 1600, y: 1800}
+	return &mchoseSimulator{pid: 0x4035, battery: 76, charge: 1, maxConfigNum: 3, profile: 1, index: 2, rateCode: 6, separate: true, x: 1600, y: 1800}
 }
 func mchoseFixture(command uint16, data []byte) []byte {
 	b := make([]byte, 64)
@@ -65,7 +66,7 @@ func (s *mchoseSimulator) Exchange(q []byte, match func([]byte) bool, timeout ti
 		p = make([]byte, 14)
 		binary.LittleEndian.PutUint16(p, 0x3837)
 		binary.LittleEndian.PutUint16(p[2:], pid)
-		p[4] = 3
+		p[4] = s.maxConfigNum
 		p[10] = 1
 		p[11] = s.charge
 		p[12] = s.battery
@@ -371,5 +372,80 @@ func TestMchoseOneAxisAndOneKFamily(t *testing.T) {
 	s.rateCode = 6
 	if _, e := m.ReadRate(); e == nil {
 		t.Fatal("1K 型号接受 8K")
+	}
+}
+
+func TestMchoseReportedConfigCountDoesNotRejectIdentityOrBattery(t *testing.T) {
+	for _, count := range []byte{0, 4, 255} {
+		t.Run(fmt.Sprintf("count=%d", count), func(t *testing.T) {
+			s := newMchoseSimulator()
+			s.maxConfigNum = count
+			m, err := probeMchose(s, 0x1018)
+			if err != nil {
+				t.Fatalf("数量元数据阻止了已匹配的鼠标身份：%v", err)
+			}
+			defer m.Close()
+			value, err := m.ReadBattery()
+			if err != nil || value.Percent != 76 || !value.Charging {
+				t.Fatalf("电量：%+v %v", value, err)
+			}
+			for _, q := range s.calls {
+				if binary.LittleEndian.Uint16(q[4:6]) != 0x0900 {
+					t.Fatal("电量查询发送了其他命令")
+				}
+			}
+		})
+	}
+}
+
+func TestMchoseFourConfigMetadataReadsOnlyConfirmedProfileIndices(t *testing.T) {
+	for _, profile := range []byte{0, 1, 2} {
+		t.Run(fmt.Sprintf("profile=%d", profile), func(t *testing.T) {
+			s := newMchoseSimulator()
+			s.maxConfigNum = 4
+			s.profile = profile
+			m, err := probeMchose(s, 0x1018)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer m.Close()
+			dpi, err := m.ReadDPI()
+			if err != nil || dpi != (dpiValue{1600, 1800}) {
+				t.Fatalf("DPI：%+v %v", dpi, err)
+			}
+			rate, err := m.ReadRate()
+			if err != nil || rate != 8000 {
+				t.Fatalf("回报率：%d %v", rate, err)
+			}
+		})
+	}
+}
+
+func TestMchoseUnconfirmedProfileKeepsBatteryAndNeverQueriesAnAxis(t *testing.T) {
+	s := newMchoseSimulator()
+	s.maxConfigNum = 4
+	s.profile = 3
+	m, err := probeMchose(s, 0x1018)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer m.Close()
+	value, err := m.ReadBattery()
+	if err != nil || value.Percent != 76 {
+		t.Fatalf("未知当前配置不应阻止电量：%+v %v", value, err)
+	}
+	if _, err = m.ReadDPI(); !errors.Is(err, errFrame) || !strings.Contains(err.Error(), "配置索引 3") {
+		t.Fatalf("未保留当前配置原值：%v", err)
+	}
+	if _, err = m.ReadRate(); !errors.Is(err, errFrame) {
+		t.Fatalf("未知配置的回报率被接受：%v", err)
+	}
+	for _, q := range s.calls {
+		if binary.LittleEndian.Uint16(q[4:6]) == 3 {
+			t.Fatalf("未知配置仍发送 DPI 查询：%x", q)
+		}
+	}
+	if _, err = mchoseReadRequest(3, []byte{3, 0}); err == nil {
+		t.Fatal("不应开放编号3的DPI查询")
 	}
 }

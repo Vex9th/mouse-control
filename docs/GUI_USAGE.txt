@@ -1,4 +1,4 @@
-鼠标工具 1.5.1 · Windows 桌面版
+鼠标工具 1.5.2 · Windows 桌面版
 
 使用方法
 1. 解压到任意普通目录，双击 MouseControl.exe。

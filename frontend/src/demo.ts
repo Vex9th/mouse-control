@@ -26,7 +26,7 @@ export function createDemoAPI(stress = false): MouseAPI {
   }
   let scans = 0
   const wait = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 420))
-  const diagnosticReport = () => ({ text: `鼠标工具 1.5.1 · 演示诊断日志
+  const diagnosticReport = () => ({ text: `鼠标工具 1.5.2 · 演示诊断日志
 此日志来自界面预览，不代表真实鼠标。
 ${stress ? '操作：读取设备\n结果：设备响应格式不匹配\n设备：迈从 共用无线接收器\n连接：无线接收器\nVID / PID：3837 / 0001\n次数：1' : '尚未记录设备错误。'}`, location: '演示模式不保存文件', saveError: '' })
   return {
@@ -36,7 +36,7 @@ ${stress ? '操作：读取设备\n结果：设备响应格式不匹配\n设备�
     async scan() {
       await wait()
       if (stress && scans++ > 0) throw new Error('压力预览的完整错误开始。' + '设备未响应，保留上次读数；不要重发设置，请检查连接。'.repeat(35) + '压力预览的完整错误结束')
-      return { version: '1.5.1', scannedAt: new Date().toISOString(), devices: structuredClone(devices) }
+      return { version: '1.5.2', scannedAt: new Date().toISOString(), devices: structuredClone(devices) }
     },
     async setDPI(id, x, y) { await wait(); const d = devices.find(d => d.id === id); if (!d) throw new Error('演示设备已断开'); const changed = d.dpi.x !== x || d.dpi.y !== y; d.dpi = { x, y, error: '' }; return { changed, message: '演示：DPI 读回确认', device: structuredClone(d) } },
     async setRate(id, rate) { await wait(); const d = devices.find(d => d.id === id); if (!d) throw new Error('演示设备已断开'); const changed = d.rate.hz !== rate; d.rate = { hz: rate, error: '' }; return { changed, message: '演示：回报率读回确认', device: structuredClone(d) } },

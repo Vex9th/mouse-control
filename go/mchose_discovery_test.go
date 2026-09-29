@@ -96,3 +96,27 @@ func TestMchoseDescriptorFailureRemainsARealFailure(t *testing.T) {
 		t.Fatal("正常未匹配接口被当作系统失败")
 	}
 }
+
+func TestMchoseFourConfigReceiverIsNotAnUnavailableCard(t *testing.T) {
+	var sim *mchoseSimulator
+	svc := newGUIService(func() ([]device, error) {
+		sim = newMchoseSimulator()
+		sim.maxConfigNum = 4
+		return []device{probeMchoseDevice("USB/A", 0x1018, sim)}, nil
+	})
+	defer svc.Close()
+	snap, err := svc.Scan()
+	if err != nil || len(snap.Devices) != 1 {
+		t.Fatalf("扫描结果：%+v %v", snap, err)
+	}
+	d := snap.Devices[0]
+	if d.Status != "online" || d.Name != "迈从 A5 V3 Pro" || d.Battery.Percent == nil || *d.Battery.Percent != 76 || d.DPI.X == nil || *d.DPI.X != 1600 || d.Rate.Hz == nil || *d.Rate.Hz != 8000 {
+		t.Fatalf("数量4设备未取得实际读数：%+v", d)
+	}
+	if !d.Capabilities.DPIReadOnly || !d.Capabilities.RateReadOnly {
+		t.Fatal("回归修复意外开放写入")
+	}
+	if sim.closed != 1 {
+		t.Fatalf("通道关闭次数：%d", sim.closed)
+	}
+}

@@ -16,8 +16,8 @@ For **Windows 10 / 11 x64**. Download from [Releases](https://github.com/Vex9th/
 
 | File | Purpose |
 | --- | --- |
-| `MouseControl-1.5.1-windows-x64.zip` | Portable GUI. Extract and run `MouseControl.exe`. |
-| `RazerBattery-1.5.1-windows-x64.zip` | Portable CLI, help and third-party notices. Extract and run `RazerBattery.exe` for the interactive menu. |
+| `MouseControl-1.5.2-windows-x64.zip` | Portable GUI. Extract and run `MouseControl.exe`. |
+| `RazerBattery-1.5.2-windows-x64.zip` | Portable CLI, help and third-party notices. Extract and run `RazerBattery.exe` for the interactive menu. |
 | `SHA256SUMS.txt` | SHA256 checksums for the downloads. |
 
 The GUI requires **Microsoft Edge WebView2 Runtime**. Windows 11 includes it; if missing, install the Evergreen Runtime from [Microsoft](https://developer.microsoft.com/microsoft-edge/webview2/). Running the application does not require Node.js, Python or Go.
