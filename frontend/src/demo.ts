@@ -18,6 +18,11 @@ export function createDemoAPI(stress = false): MouseAPI {
     unavailable.battery = { ...unavailable.battery, percent: null, charging: null, chargeText: '', error }
     unavailable.dpi = { x: null, y: null, error }
     unavailable.rate = { hz: null, error }
+  } else {
+    devices.push({ ...structuredClone(demoDevice), id: 'demo:mchose:a7', name: '迈从 A7 V3', vendor: 'mchose', vid: 0x3837, pid: 0x4030,
+      capabilities: { ...structuredClone(demoDevice.capabilities), dpiRanges: [{ min: 1, max: 26000, step: 1 }], dpiReadOnly: true, rateReadOnly: true,
+        dpiReason: '迈从实验性支持，当前仅提供读取。', rateReason: '迈从实验性支持，当前仅提供读取。' },
+      notes: ['仅用于界面预览；迈从协议尚无真机验证。'] })
   }
   let scans = 0
   const wait = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 420))
@@ -25,7 +30,7 @@ export function createDemoAPI(stress = false): MouseAPI {
     async scan() {
       await wait()
       if (stress && scans++ > 0) throw new Error('压力预览的完整错误开始。' + '设备未响应，保留上次读数；不要重发设置，请检查连接。'.repeat(35) + '压力预览的完整错误结束')
-      return { version: '1.4.2', scannedAt: new Date().toISOString(), devices: structuredClone(devices) }
+      return { version: '1.5.0', scannedAt: new Date().toISOString(), devices: structuredClone(devices) }
     },
     async setDPI(id, x, y) { await wait(); const d = devices.find(d => d.id === id); if (!d) throw new Error('演示设备已断开'); const changed = d.dpi.x !== x || d.dpi.y !== y; d.dpi = { x, y, error: '' }; return { changed, message: '演示：DPI 读回确认', device: structuredClone(d) } },
     async setRate(id, rate) { await wait(); const d = devices.find(d => d.id === id); if (!d) throw new Error('演示设备已断开'); const changed = d.rate.hz !== rate; d.rate = { hz: rate, error: '' }; return { changed, message: '演示：回报率读回确认', device: structuredClone(d) } },

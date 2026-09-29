@@ -1,4 +1,5 @@
-export type Vendor = 'razer' | 'logitech'
+export type Vendor = 'razer' | 'logitech' | 'mchose'
+export const vendorNames: Record<Vendor, string> = { razer: '雷蛇', logitech: '罗技', mchose: '迈从' }
 export interface DPIRange { min: number; max: number; step: number }
 export interface Capabilities {
   battery: boolean

@@ -90,6 +90,35 @@ python scripts/package-gui.py
 
 打包脚本包含中文使用说明和第三方许可证，并检查 ZIP CRC 与包内文件内容。发布源码与二进制应使用同一版本，上传后再核对下载文件的 SHA256。
 
+## 自动构建与版本发布
+
+`.github/workflows/windows.yml` 在 main 提交、PR 和手动触发时运行 Windows x64 构建。它检查 Go 与 `frontend/package.json` 的版本一致性，执行 Python 打包回归、PowerShell 清理保护、前端测试 / 类型检查 / 字体检查、Windows Go 测试与 vet，并生成两个便携 ZIP。普通构建只有读取仓库权限，附件保留 7 天。
+
+发布新版本时，先让 main 构建通过，再推送与源码版本一致的标签，例如 `v1.5.0`。只有标签发布任务拥有 `contents: write` 权限，发布前重新检查下载附件的 SHA256；已存在的 Release 会被拒绝，不能用重跑覆盖资产。
+
+本地完整打包需先生成 `dist/MouseControl.exe`、`dist/RazerBattery.exe` 和 `dist/CLI_HELP.txt`，再执行：
+
+```powershell
+python scripts/release-package.py package
+```
+
+输出位于 `dist/release/`。`scripts/package-gui.py` 仍可单独打包 GUI，文件名从源码版本读取。
+
+## 编译机只保留最新成功构建
+
+远程源码、临时脚本、日志、缓存和产物统一放入项目固定根目录下 `builds/<任务类型>/<批次>/`，依赖放在 `dependencies/`。新构建成功且产物回传校验完成后，再清理旧批次；失败不能删除最后成功版本。
+
+`scripts/prune-builds.ps1` 默认只预演，使用明确的保留批次和已回传归档清单，不根据目录名猜测所有权。清单格式见脚本顶部说明与 `test-prune-builds.ps1` 中的完整用例。
+
+```powershell
+powershell -NoProfile -File scripts/prune-builds.ps1 `
+  -ProjectRoot D:\Developer\MouseControl -KeepBatch gui/release-01 `
+  -ManifestPath D:\Developer\MouseControl\builds\gui\release-01\receipt.json
+# 检查预演输出后，以相同参数添加 -Execute 执行
+```
+
+脚本校验项目边界、成功产物哈希、旧批次的完整文件清单与归档回传哈希，拒绝链接、活动进程及源文件变化。清理时不要并行启动构建。个人测试电脑只使用一个固定应用目录，临时验证结果回传后清理。
+
 ## English quick reference
 
 With Go 1.23+, Node.js 22.12+, Bun and Python 3 installed, run `python scripts/build-gui.py` from the repository root to install locked frontend dependencies, run frontend tests and type checks, bundle the UI, and cross-compile the Windows x64 GUI. The output is `dist/MouseControl.exe`.
@@ -97,3 +126,5 @@ With Go 1.23+, Node.js 22.12+, Bun and Python 3 installed, run `python scripts/b
 For the CLI, run `go test ./...` and `go build` inside `go/` on Windows. On macOS or Linux, set `GOOS=windows GOARCH=amd64 CGO_ENABLED=0` when building the executable.
 
 The frontend preview is development-only and uses explicit demo data. Native Windows tests require WebView2. Hardware reads and settings tests are opt-in; `RAZER_SETTINGS_TEST=1` performs real, temporary changes and attempts to restore the original values.
+
+GitHub Actions builds Windows x64 GUI/CLI on main pushes, PRs and manual dispatch, retaining artifacts for 7 days. Matching version tags publish new Releases without replacing existing assets. Remote build cleanup requires an explicit verified archive manifest; it defaults to dry-run and preserves the named successful build and shared dependencies.

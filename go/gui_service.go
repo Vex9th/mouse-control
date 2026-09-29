@@ -220,6 +220,8 @@ func guiReadDevice(d device) guiDevice {
 	result := guiDevice{ID: d.ID, Name: deviceName(d), Vendor: "razer", Connection: d.Info.Connection, VID: deviceVID(d), PID: d.PID, Status: "identified", Capabilities: cap, Notes: append([]string{}, f.Notes...)}
 	if result.VID == 0x046d {
 		result.Vendor = "logitech"
+	} else if result.VID == mchoseVID {
+		result.Vendor = "mchose"
 	}
 	result.Battery.Error = guiError(r.Err)
 	if r.Err == nil {

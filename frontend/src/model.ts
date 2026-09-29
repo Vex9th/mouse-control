@@ -34,7 +34,7 @@ export function batteryDisplay(b: MouseDevice['battery']): { value: string; unit
   return { value: b.level || (b.voltageMV !== null ? String(b.voltageMV) : '未知'), unit: !b.level && b.voltageMV !== null ? 'mV' : '', detail: [b.level && b.voltageMV !== null ? `${b.voltageMV} mV` : '', b.chargeText || '未提供精确百分比'].filter(Boolean).join(' · '), low: b.level === '低' || b.level === '极低', hasValue: !!b.level || b.voltageMV !== null }
 }
 export function shortName(d: MouseDevice): string {
-  return d.name.replace(/^(Razer |Logitech |Logi |雷蛇\s*|罗技\s*)/i, '')
+  return d.name.replace(/^(Razer |Logitech |Logi |MCHOSE |雷蛇\s*|罗技\s*|迈从\s*)/i, '')
 }
 export function statusLabel(d: MouseDevice): string {
   return d.status === 'online' ? '已连接' : d.status === 'identified' ? '仅识别' : '暂不可用'

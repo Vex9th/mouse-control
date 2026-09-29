@@ -539,7 +539,7 @@ addEventListener('mouse:test-minimum-layout',()=>{void capture('minimum');},{onc
 	if probe.State != "ready" {
 		t.Fatalf("扫描发现真实设备但页面未就绪：state=%q", probe.State)
 	}
-	brandPrefix := regexp.MustCompile(`(?i)^(Razer |Logitech |Logi |雷蛇\s*|罗技\s*)`)
+	brandPrefix := regexp.MustCompile(`(?i)^(Razer |Logitech |Logi |MCHOSE |雷蛇\s*|罗技\s*|迈从\s*)`)
 	selectedFound := false
 	for _, d := range snapshot.Devices {
 		if d.ID == probe.SelectedID {

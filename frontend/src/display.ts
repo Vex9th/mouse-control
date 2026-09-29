@@ -1,4 +1,5 @@
 import type { MouseDevice } from './types'
+import { vendorNames } from './types'
 
 export function paginateText(text: string, columns = 26, rows = 7): string[] {
   if (!Number.isInteger(columns) || columns < 2 || !Number.isInteger(rows) || rows < 1) throw new Error('分页尺寸无效')
@@ -21,7 +22,7 @@ export function paginateText(text: string, columns = 26, rows = 7): string[] {
 export function deviceReport(d: MouseDevice, updatedAt: string): string {
   return [
     `设备名称：${d.name}`,
-    `品牌：${d.vendor === 'razer' ? '雷蛇' : '罗技'}`,
+    `品牌：${vendorNames[d.vendor]}`,
     `连接方式：${d.connection}`,
     `设备 ID：${d.id}`,
     `VID / PID：${d.vid.toString(16).toUpperCase().padStart(4, '0')} / ${d.pid.toString(16).toUpperCase().padStart(4, '0')}`,

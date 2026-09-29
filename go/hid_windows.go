@@ -234,6 +234,12 @@ func discoverDevices() ([]device, error) {
 		return nil, err
 	}
 	devices := append(razer, logitech...)
+	mchose, err := discoverMchoseDevices()
+	if err != nil {
+		closeDevices(devices)
+		return nil, err
+	}
+	devices = append(devices, mchose...)
 	sort.Slice(devices, func(i, j int) bool {
 		if deviceVID(devices[i]) != deviceVID(devices[j]) {
 			return deviceVID(devices[i]) < deviceVID(devices[j])

@@ -1,10 +1,10 @@
-# MouseControl · 雷蛇 / 罗技鼠标工具
+# MouseControl · 雷蛇 / 罗技 / 迈从鼠标工具
 
 **中文** · [English](README_EN.md) · [下载](https://github.com/Vex9th/mouse-control/releases/latest) · [反馈问题](https://github.com/Vex9th/mouse-control/issues)
 
-轻量的 Windows 鼠标电量查询与设置工具，提供中文 GUI 和 CLI。查看 **Razer 雷蛇 / Logitech 罗技鼠标电量、充电状态、当前 DPI 和回报率**，并根据设备能力调整 DPI 与 polling rate。支持多设备识别，连接和功能范围见下表。
+轻量的 Windows 鼠标电量查询与设置工具，提供中文 GUI 和 CLI。查看 **Razer 雷蛇 / Logitech 罗技鼠标电量、充电状态、当前 DPI 和回报率**，并根据设备能力调整 DPI 与 polling rate。新增 **MCHOSE 迈从新协议鼠标的实验性只读支持**。支持多设备识别，连接和功能范围见下表。
 
-**Razer & Logitech mouse battery monitor, DPI and polling-rate control for Windows.**
+**Razer & Logitech mouse battery monitor and settings utility, with experimental read-only MCHOSE support.**
 
 ![MouseControl 中文桌面界面：鼠标电量、DPI 与回报率设置](docs/images/overview.png)
 
@@ -16,8 +16,8 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `MouseControl-1.4.2-windows-x64.zip` | 桌面版，约 1.80 MiB；解压后打开 `MouseControl.exe` |
-| `RazerBattery.exe` | 独立命令行版，包含雷蛇和罗技支持；双击进入中文菜单 |
+| `MouseControl-1.5.0-windows-x64.zip` | 桌面版；解压后打开 `MouseControl.exe` |
+| `RazerBattery-1.5.0-windows-x64.zip` | 命令行版，包含使用帮助和第三方许可；解压后运行 `RazerBattery.exe` |
 | `SHA256SUMS.txt` | 下载文件的 SHA256 校验值 |
 
 桌面版使用系统 **Microsoft Edge WebView2 Runtime**。Windows 11 包含该运行时；缺少时可从 [Microsoft 官方页面](https://developer.microsoft.com/microsoft-edge/webview2/) 安装 Evergreen Runtime。使用程序无需 Node.js、Python 或 Go。
@@ -25,7 +25,7 @@
 1. 连接鼠标或无线接收器，打开程序。
 2. 从顶部选择设备，查看电量、DPI 与回报率。
 3. 输入目标 DPI 或选择回报率，再点击对应的“应用”。程序会重新读取数值进行确认。
-4. 点“详情”查看完整设备身份和能力；多设备与长消息按页显示。
+4. 点“设备详情”查看完整设备身份和能力；多设备与长消息按页显示。
 
 无需安装服务、注册账号或设置自启动。桌面界面和中文字体内嵌在程序中，不启动本地 HTTP 服务，也不依赖在线字体。可手动刷新，或开启每 30 秒刷新；编辑未提交的设置时会暂停自动刷新。
 
@@ -36,7 +36,7 @@
 - **回报率设置**：显示设备支持的档位；部分设备可提供 125–8000 Hz，具体以上报能力为准。
 - **多设备识别**：按完整设备身份区分同型号鼠标；罗技共享接收器按槽位识别设备。
 - **GUI + CLI**：中文桌面界面和命令行查询、交互菜单、定时查看。
-- **紧凑界面**：Vue 3 + Naive UI，默认 900×440、最小 760×440 逻辑像素；设备列表、详情和长消息使用分页。
+- **紧凑界面**：Vue 3 + Naive UI，默认 900×480、最小 760×440 逻辑像素；设备列表、详情和长消息使用分页。
 - **设置读回**：当前值相同则跳过写入；修改后再次读取。超时或结果不一致会明确报告，不自动重发设置。
 
 ## 支持范围
@@ -47,13 +47,15 @@
 | 罗技 Logitech HID++ 2.x 鼠标与轨迹球 | 动态发现电量、DPI、回报率能力 | 已有协议模拟测试；尚无本项目罗技真机验证 |
 | LIGHTSPEED / POWERPLAY / Unifying / Bolt / Nano 接收器 | 已知接收器识别、槽位查询、鼠标身份区分 | 34 个接收器相关 PID；部分旧协议仅识别 |
 | 罗技 USB 直连 / 蓝牙 | Windows 提供可访问的 HID++ 通道时查询 | 蓝牙与具体型号仍需实测 |
+| 迈从 MCHOSE 新协议 USB / 2.4 GHz | 14 个鼠标型号 PID、3 个接收器 PID；电量、当前 DPI、回报率只读 | 依据官方网页驱动适配；已测模拟协议，尚无真机验证；不开放设置 |
 | HID++ 1.x / 普通 HID / 旧式私有协议 | 按能力识别或读取旧版电量 | 不支持的设置保持不可用 |
 
-**目录条目和协议支持不等于每个型号、连接方式或功能都已通过真机验证。** 雷蛇与罗技的设置接口存在型号差异；键盘、耳机、按键映射、宏、灯光、固件更新和完整板载配置不在本项目范围内。它不是 Razer Synapse、Logitech G HUB 或 Options+ 的完整替代品。
+**目录条目和协议支持不等于每个型号、连接方式或功能都已通过真机验证。** 雷蛇与罗技的设置接口存在型号差异；键盘、耳机、按键映射、宏、灯光、固件更新和完整板载配置不在本项目范围内。它不是 Razer Synapse、Logitech G HUB、Options+ 或迈从官方驱动的完整替代品。迈从仅适配文档列出的新协议型号，G3 / G7 的其他旧协议家族、固件变体和蓝牙未覆盖。
 
 - [雷蛇鼠标型号与 DPI / 回报率协议](docs/MOUSE_PROTOCOL.md)
 - [罗技 HID++ 功能与限制](docs/LOGITECH_PROTOCOL.md)
 - [罗技接收器、槽位与蓝牙通道](docs/LOGITECH_RECEIVERS.md)
+- [迈从型号、协议与实验性限制](docs/MCHOSE_PROTOCOL.md)
 - [兼容性与验证说明](docs/COMPATIBILITY.md)
 
 ## 命令行
@@ -98,6 +100,12 @@
 
 **能直接做成网页吗？** 当前版本是 Windows 桌面程序。Vue 界面可以复用，但网页需要单独实现 WebHID 通信、浏览器授权和逐设备验证，不能直接复用 Go 的 Windows HID 后端。见 [网页版说明](docs/WEB_FEASIBILITY.md)。
 
+## 自动编译
+
+推送到 `main`、提交 Pull Request 或在 [Actions](https://github.com/Vex9th/mouse-control/actions/workflows/windows.yml) 手动运行，都会在 GitHub Windows runner 上执行测试并生成 GUI / CLI 便携包、第三方许可和 SHA256。临时构建附件保留 7 天，同一分支的新提交会取消旧构建。
+
+推送与源码版本一致的 `v*` 标签后自动创建 Release；不会覆盖已有 Release。普通 CI 不连接真实鼠标，也不运行设置测试。GitHub 构建不向个人电脑复制文件。
+
 ## 从源码构建
 
 需要 Go 1.23+、Node.js 22.12+、Bun 和 Python 3。推荐在 Windows x64 上构建并验证运行。
@@ -121,6 +129,6 @@ GUI 输出为 `dist/MouseControl.exe`。Go 模块和前端依赖使用项目内�
 
 提交 [Issue](https://github.com/Vex9th/mouse-control/issues) 时，请提供鼠标型号、连接方式、Windows 版本、程序版本和错误信息。设备路径可能包含序列号，公开日志前请遮盖序列号及其他个人信息。
 
-维护者：[Vex9th](https://github.com/Vex9th)。协议资料参考 [OpenRazer](https://github.com/openrazer/openrazer)、[Logitech HID++ 文档](https://github.com/Logitech/cpg-docs)、[Solaar](https://github.com/pwr-Solaar/Solaar)、[libratbag](https://github.com/libratbag/libratbag) 和 Linux HID 驱动；固定版本与具体字段来源列在协议文档中。依赖与字体许可证见 [第三方许可](docs/THIRD_PARTY_NOTICES.txt)。
+维护者：[Vex9th](https://github.com/Vex9th)。协议资料参考 [OpenRazer](https://github.com/openrazer/openrazer)、[Logitech HID++ 文档](https://github.com/Logitech/cpg-docs)、[Solaar](https://github.com/pwr-Solaar/Solaar)、[libratbag](https://github.com/libratbag/libratbag) 、Linux HID 驱动和 [迈从官方网页驱动](https://www.mchose.com.cn/#/connectDevice)；固定版本与具体字段来源列在协议文档中。依赖与字体许可证见 [第三方许可](docs/THIRD_PARTY_NOTICES.txt)。
 
-本项目与 Razer、Logitech 无隶属关系。品牌和产品名称属于各自权利人。
+本项目与 Razer、Logitech、MCHOSE 无隶属关系。品牌和产品名称属于各自权利人。

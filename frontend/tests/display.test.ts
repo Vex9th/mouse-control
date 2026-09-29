@@ -33,3 +33,12 @@ test('设备报告明确列出只读能力，即使设备没有提供原因', ()
   expect(text).toContain('DPI 设置：只读')
   expect(text).toContain('回报率设置：只读')
 })
+
+test('迈从品牌准确显示且只读限制完整保留', () => {
+  const d = device('mchose:one')
+  Object.assign(d, { vendor: 'mchose', name: 'MCHOSE A7' })
+  d.capabilities.dpiReadOnly = true
+  d.capabilities.dpiReason = '实验性支持，当前只读'
+  expect(deviceReport(d, '12:30:00')).toContain('品牌：迈从')
+  expect(deviceReport(d, '12:30:00')).toContain('实验性支持，当前只读')
+})

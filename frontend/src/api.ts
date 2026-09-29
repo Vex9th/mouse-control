@@ -11,7 +11,7 @@ function strings(value: Record<string, unknown>, keys: string[]): boolean { retu
 function isDevice(value: unknown): value is MouseDevice {
   if (!object(value) || !strings(value, ['id', 'name', 'connection']) || !object(value.battery) || !object(value.dpi) || !object(value.rate) || !object(value.capabilities)) return false
   const b = value.battery, d = value.dpi, r = value.rate, c = value.capabilities
-  return (value.vendor === 'razer' || value.vendor === 'logitech')
+  return (value.vendor === 'razer' || value.vendor === 'logitech' || value.vendor === 'mchose')
     && ['online', 'unavailable', 'identified'].includes(String(value.status))
     && integer(value.vid, 0, 65535) && integer(value.pid, 0, 65535)
     && nullableInteger(b.percent, 0, 100) && nullableInteger(b.voltageMV, 1)

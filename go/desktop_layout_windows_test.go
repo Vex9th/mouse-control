@@ -60,9 +60,9 @@ func TestDesktopNativeClientSizeAndMinimum(t *testing.T) {
 	if result, _, err := desktopUser32.NewProc("GetClientRect").Call(w.hwnd, uintptr(unsafe.Pointer(&client))); result == 0 {
 		t.Fatal(err)
 	}
-	_, _, wantW, wantH := outerSize(900, 440)
+	_, _, wantW, wantH := outerSize(900, 480)
 	if client[2] != wantW || client[3] != wantH {
-		t.Errorf("默认客户区没有按900×440 DIP与工作区换算：DPI=%d actual=%v want=%dx%d", dpi, client, wantW, wantH)
+		t.Errorf("默认客户区没有按900×480 DIP与工作区换算：DPI=%d actual=%v want=%dx%d", dpi, client, wantW, wantH)
 	}
 	var minimum [10]int32
 	desktopUser32.NewProc("SendMessageW").Call(w.hwnd, 0x24, 0, uintptr(unsafe.Pointer(&minimum)))

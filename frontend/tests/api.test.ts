@@ -47,3 +47,19 @@ test('匹配请求的错误事件保留服务原始原因', async () => {
   await expect(result).rejects.toThrow('身份已经改变')
   api.dispose()
 })
+
+test('迈从只读结果通过桥接校验，未支持品牌仍被拒绝', async () => {
+  const target = new EventTarget(); let request!: MouseRequest
+  const api = new NativeMouseAPI({ events: target, submit: async q => { request = q; return true } }, 100)
+  for (const vendor of ['mchose', 'unknown']) {
+    const result = api.scan()
+    const value = snapshot()
+    Object.assign(value.devices[0]!, { vendor, id: 'mchose:3837:4026', name: '迈从 A7' })
+    value.devices[0]!.capabilities.dpiReadOnly = true
+    value.devices[0]!.capabilities.rateReadOnly = true
+    target.dispatchEvent(new CustomEvent('mouse:response', { detail: { id: request.id, result: value } }))
+    if (vendor === 'mchose') expect((await result).devices[0]!.vendor).toBe('mchose')
+    else await expect(result).rejects.toThrow('格式无效')
+  }
+  api.dispose()
+})

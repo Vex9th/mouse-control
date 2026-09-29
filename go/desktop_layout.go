@@ -4,7 +4,7 @@ import "fmt"
 
 const (
 	desktopDefaultWidth  = 900
-	desktopDefaultHeight = 440
+	desktopDefaultHeight = 480
 	desktopMinimumWidth  = 760
 	desktopMinimumHeight = 440
 )

@@ -142,8 +142,9 @@ ID 可从 -details 输出复制；只匹配完整 ID，不按型号或编号猜�
 设置后读取实际值核对；当前值已相同时跳过写入。
 每次设置一种参数；实际 DPI 范围与回报率档位以型号详情为准。
 
-支持 Windows 10 / 11 x64；支持雷蛇与罗技鼠标及对应接收器。
+支持 Windows 10 / 11 x64；支持雷蛇、罗技及部分迈从鼠标和对应接收器。
 罗技通过 HID++ 动态探测电量、DPI、回报率；部分型号或连接方式只提供部分功能。
+迈从新协议族为实验性只读支持，尚无真机验证。
 USB、无线接收器与可访问的蓝牙接口依型号而定，不代表全系真机认证。
 未适配或读取失败会说明原因，不会把未知状态显示为 0。
 `, version)
@@ -324,7 +325,7 @@ func cleanLabel(s string) string {
 
 func displayName(s string) string {
 	s = strings.NewReplacer("(Wired)", "（有线）", "(Wireless)", "（无线）", "(Receiver)", "（接收器）", "(Bluetooth)", "（蓝牙）").Replace(s)
-	for _, brand := range [][2]string{{"Razer ", "雷蛇 "}, {"Logitech ", "罗技 "}, {"Logi ", "罗技 "}} {
+	for _, brand := range [][2]string{{"Razer ", "雷蛇 "}, {"Logitech ", "罗技 "}, {"Logi ", "罗技 "}, {"MCHOSE ", "迈从 "}} {
 		if len(s) >= len(brand[0]) && strings.EqualFold(s[:len(brand[0])], brand[0]) {
 			s = brand[1] + s[len(brand[0]):]
 			break
@@ -335,7 +336,7 @@ func displayName(s string) string {
 
 func deviceName(d device) string {
 	s := displayName(d.Info.Name)
-	if strings.HasPrefix(s, "雷蛇") || strings.HasPrefix(s, "罗技") {
+	if strings.HasPrefix(s, "雷蛇") || strings.HasPrefix(s, "罗技") || strings.HasPrefix(s, "迈从") {
 		return s
 	}
 	switch deviceVID(d) {
@@ -343,6 +344,8 @@ func deviceName(d device) string {
 		return "雷蛇 " + s
 	case 0x046d:
 		return "罗技 " + s
+	case mchoseVID:
+		return "迈从 " + s
 	default:
 		return s
 	}
@@ -423,6 +426,18 @@ func printSupported(w io.Writer) {
 		}
 		fmt.Fprintf(w, "  %04X  %s\n        %s\n", p, deviceName(d), strings.Join(abilities, " · "))
 	}
+	fmt.Fprintln(w, "\n迈从鼠标 · 实验性只读（VID 3837）")
+	mchosePIDs := make([]int, 0, len(mchoseModels))
+	for pid := range mchoseModels {
+		mchosePIDs = append(mchosePIDs, int(pid))
+	}
+	sort.Ints(mchosePIDs)
+	for _, value := range mchosePIDs {
+		m := mchoseModels[uint16(value)]
+		fmt.Fprintf(w, "  %04X  %s\n", value, displayName(m.Name))
+	}
+	fmt.Fprintln(w, "  共用接收器：1014 / 1018 / 1016；须有效响应确认鼠标型号。\n  电量、当前 DPI 与回报率只读；旧协议族未适配，尚无真机验证。")
+
 	fmt.Fprintln(w, "\n罗技鼠标 · HID++ 1.0 / 2.0 动态检测\n  连接：USB / LIGHTSPEED / Unifying / Bolt / 可访问的蓝牙接口\n  按鼠标实际公开的能力查询电量、DPI、回报率；有些功能可能只读或不可用。\n\n目录与协议适配不等于全系真机认证；每台鼠标的详情会列出实际可用能力。")
 }
 

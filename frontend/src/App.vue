@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { darkTheme, zhCN, NButton, NCard, NConfigProvider, NGlobalStyle, NIcon, NInput, NModal, NPagination, NPopover, NProgress, NRadio, NRadioGroup, NSwitch, NTag, NText } from 'naive-ui'
-import { Activity, AlertCircle, Check, ChevronDown, InfoCircle, Mouse, Refresh, Settings } from '@vicons/tabler'
+import { zhCN, NButton, NCard, NConfigProvider, NGlobalStyle, NIcon, NInput, NModal, NPagination, NPopover, NProgress, NRadioButton, NRadioGroup, NSwitch, NTag, NText } from 'naive-ui'
+import { AlertCircle, Check, ChevronDown, InfoCircle, Mouse, Refresh } from '@vicons/tabler'
 import type { MouseAPI } from './types'
+import { vendorNames } from './types'
 import { createWorkspace } from './workspace'
 import { createSettingsDraft } from './drafts'
 import { batteryDisplay, formatDPIRanges, inDPIRanges, shortName, statusLabel, timeLabel, validateDPIInput, validateRateInput } from './model'
@@ -82,16 +83,16 @@ onBeforeUnmount(() => { clearInterval(refreshTimer); workspace.dispose() })
 </script>
 
 <template>
-  <NConfigProvider :theme="darkTheme" :theme-overrides="mouseTheme" :locale="zhCN" class="app-provider">
+  <NConfigProvider :theme-overrides="mouseTheme" :locale="zhCN" class="app-provider">
     <NGlobalStyle/>
     <main class="app-frame" :aria-busy="busy" :data-selected-id="state.selectedId" :data-state="selected ? 'ready' : busy ? 'loading' : mode === 'unavailable' ? 'unavailable' : 'empty'">
       <header class="toolbar">
-        <div class="brand"><NIcon :component="Mouse" :size="21"/><strong>鼠标工具</strong></div>
+        <div class="brand"><span class="brand-icon"><NIcon :component="Mouse" :size="19"/></span><strong>鼠标工具</strong><span class="brand-caption">MOUSE CONTROL</span></div>
         <NTag v-if="mode === 'demo'" type="warning" size="small" :bordered="false" title="未连接真实鼠标，所有操作仅为界面演示">演示</NTag>
         <NPopover v-model:show="devicePicker" trigger="click" placement="bottom-start" :show-arrow="false" :width="340">
           <template #trigger>
             <NButton secondary size="small" class="device-trigger" :disabled="!devices.length" aria-label="选择鼠标">
-              <span class="trigger-label">{{ selected ? shortName(selected) : '选择设备' }}</span>
+              <span class="trigger-label">切换设备<span v-if="devices.length" class="device-count">{{ devices.length }} 台</span></span>
               <template #icon><NIcon :component="ChevronDown"/></template>
             </NButton>
           </template>
@@ -111,12 +112,12 @@ onBeforeUnmount(() => { clearInterval(refreshTimer); workspace.dispose() })
       </header>
 
       <NCard v-if="selected" class="device-summary" content-class="summary-content" content-style="padding: var(--summary-padding)" size="small" :bordered="false">
-        <div class="summary-identity">
+        <div class="summary-identity"><div class="device-emblem"><NIcon :component="Mouse" :size="32"/></div><div class="identity-copy">
           <h1 :title="selected.name">{{ shortName(selected) }}</h1>
-          <div class="summary-meta"><NTag size="small" :type="selected.status === 'online' && !state.stale ? 'success' : 'warning'" :bordered="false">{{ state.stale ? '待读取' : statusLabel(selected) }}</NTag><NText depth="3" class="connection-label">{{ selected.vendor === 'razer' ? '雷蛇' : '罗技' }} · {{ selected.connection }}</NText></div>
-        </div>
+          <div class="summary-meta"><NTag size="small" :type="selected.status === 'online' && !state.stale ? 'success' : 'warning'" :bordered="false">{{ state.stale ? '待读取' : statusLabel(selected) }}</NTag><NText depth="3" class="connection-label">{{ vendorNames[selected.vendor] }} · {{ selected.connection }}</NText></div>
+        </div></div>
         <div class="summary-battery">
-          <div class="battery-heading"><NText depth="3" class="secondary-text">电量</NText><NText class="battery-value">{{ selected.capabilities.battery && battery?.hasValue ? battery.value : '未知' }}<span v-if="selected.capabilities.battery && battery?.hasValue">{{ battery.unit }}</span></NText></div>
+          <div class="battery-heading"><NText depth="3" class="secondary-text">剩余电量</NText><NText class="battery-value">{{ selected.capabilities.battery && battery?.hasValue ? battery.value : '未知' }}<span v-if="selected.capabilities.battery && battery?.hasValue">{{ battery.unit }}</span></NText></div>
           <NProgress v-if="selected.battery.percent !== null" type="line" :percentage="selected.battery.percent" :show-indicator="false" :height="4" :status="battery?.low ? 'warning' : 'default'"/>
           <NButton v-if="batteryIssue" text type="warning" size="tiny" class="single-line-button" @click="showText('电量信息', batteryIssue)"><span class="ellipsis">{{ batteryIssue }}</span><template #icon><NIcon :component="AlertCircle"/></template></NButton>
           <NText v-else depth="3" class="secondary-text ellipsis">{{ battery?.detail || '设备未提供电量信息' }}</NText>
@@ -126,7 +127,7 @@ onBeforeUnmount(() => { clearInterval(refreshTimer); workspace.dispose() })
 
       <div v-if="selected" class="settings-grid">
         <NCard class="control-panel" content-class="control-panel-content" content-style="padding: var(--control-padding)" size="small" :bordered="false">
-          <div class="panel-heading"><h2><NIcon :component="Settings" :size="18"/>灵敏度</h2><div class="reading"><NText depth="3" class="secondary-text">当前</NText><NText class="readout">{{ selected.dpi.error ? '—' : selected.dpi.x?.toLocaleString('zh-CN') ?? '—' }}<span v-if="!selected.dpi.error && selected.dpi.y !== null && selected.dpi.y !== selected.dpi.x"> / {{ selected.dpi.y.toLocaleString('zh-CN') }}</span></NText><NText depth="3" class="secondary-text">DPI</NText></div></div>
+          <div class="panel-heading"><div class="panel-title"><h2>灵敏度</h2><NText depth="3" class="secondary-text">控制指针移动速度</NText></div><div class="reading"><span class="sr-only">当前</span><NText class="readout" :class="{ 'split-readout': selected.dpi.y !== null && selected.dpi.y !== selected.dpi.x }">{{ selected.dpi.error ? '—' : selected.dpi.x?.toLocaleString('zh-CN') ?? '—' }}<span v-if="!selected.dpi.error && selected.dpi.y !== null && selected.dpi.y !== selected.dpi.x"> / {{ selected.dpi.y.toLocaleString('zh-CN') }}</span></NText><NText depth="3" class="secondary-text">DPI</NText></div></div>
           <form class="control-form" @submit.prevent="applyDPI">
             <div class="form-content">
               <div class="field-heading"><label for="dpi-x">目标 DPI</label><div v-if="selected.capabilities.separateAxes" class="axis-control"><NText class="secondary-text">双轴同步</NText><NSwitch :value="linked" size="small" :disabled="noWrite || !!dpiBlocked" aria-label="双轴同步" @update:value="updateLinked"/></div></div>
@@ -141,11 +142,11 @@ onBeforeUnmount(() => { clearInterval(refreshTimer); workspace.dispose() })
           </form>
         </NCard>
         <NCard class="control-panel" content-class="control-panel-content" content-style="padding: var(--control-padding)" size="small" :bordered="false">
-          <div class="panel-heading"><h2><NIcon :component="Activity" :size="18"/>回报率</h2><div class="reading"><NText depth="3" class="secondary-text">当前</NText><NText class="readout">{{ selected.rate.error ? '—' : selected.rate.hz?.toLocaleString('zh-CN') ?? '—' }}</NText><NText depth="3" class="secondary-text">Hz</NText></div></div>
+          <div class="panel-heading"><div class="panel-title"><h2>回报率</h2><NText depth="3" class="secondary-text">向电脑报告的频率</NText></div><div class="reading"><span class="sr-only">当前</span><NText class="readout">{{ selected.rate.error ? '—' : selected.rate.hz?.toLocaleString('zh-CN') ?? '—' }}</NText><NText depth="3" class="secondary-text">Hz</NText></div></div>
           <form class="control-form" @submit.prevent="applyRate">
             <div class="form-content">
               <div class="field-heading"><span>目标回报率</span><NText depth="3" class="secondary-text">Hz</NText></div>
-              <NRadioGroup :value="rateValue" :disabled="noWrite || !!rateBlocked" size="small" class="rate-options" aria-label="目标回报率" @update:value="updateRate"><NRadio v-for="rate in selected.capabilities.pollRates" :key="rate" :value="rate">{{ rate.toLocaleString('zh-CN') }}</NRadio></NRadioGroup>
+              <NRadioGroup :value="rateValue" :disabled="noWrite || !!rateBlocked" size="small" class="rate-options" :class="{ 'many-rates': selected.capabilities.pollRates.length > 6 }" aria-label="目标回报率" @update:value="updateRate"><NRadioButton v-for="rate in selected.capabilities.pollRates" :key="rate" :value="rate">{{ rate.toLocaleString('zh-CN') }}</NRadioButton></NRadioGroup>
               <NText v-if="!selected.capabilities.pollRates.length" depth="3" class="secondary-text">设备未提供可设置档位</NText>
               <NText depth="3" class="secondary-text rate-note">更高的回报率通常会增加耗电。</NText>
             </div>
@@ -162,7 +163,7 @@ onBeforeUnmount(() => { clearInterval(refreshTimer); workspace.dispose() })
       <footer class="status-bar" :role="state.error ? 'alert' : 'status'">
         <NButton v-if="feedback" text size="tiny" :type="state.error ? 'warning' : 'success'" class="feedback-button" :aria-label="state.error ? '查看完整错误信息' : '查看操作结果'" @click="showFeedback"><template #icon><NIcon :component="state.error ? AlertCircle : Check"/></template><span class="ellipsis">{{ feedback }}</span><span class="feedback-more">查看</span></NButton>
         <NText v-else depth="3" class="status-copy secondary-text">{{ quietStatus }}</NText>
-        <NButton text size="small" :disabled="!selected" @click="showDeviceDetails"><template #icon><NIcon :component="InfoCircle" :size="17"/></template>详情</NButton>
+        <NButton text size="small" :disabled="!selected" @click="showDeviceDetails"><template #icon><NIcon :component="InfoCircle" :size="17"/></template>设备详情</NButton>
       </footer>
     </main>
     <NModal v-model:show="viewerOpen" preset="card" size="small" :title="viewerTitle" :bordered="false" class="text-viewer" :mask-closable="true" :segmented="{ content: true, footer: 'soft' }">

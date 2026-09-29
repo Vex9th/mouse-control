@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const version = "1.4.2"
+const version = "1.5.0"
 
 func run() (int, bool) {
 	opts, err := parseOptions(os.Args[1:])
