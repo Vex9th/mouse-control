@@ -75,6 +75,9 @@ jobs:
       - name: 验证打包脚本
         run: python -m unittest discover -s scripts -p 'test_*.py' -v
 
+      - name: 验证迈从只读采集脚本
+        run: node --test scripts/test-mchose-capture.cjs
+
       - name: 验证构建清理保护
         run: powershell -NoProfile -File scripts/test-prune-builds.ps1
 

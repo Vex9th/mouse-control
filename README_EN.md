@@ -53,7 +53,7 @@ No background service, account or startup entry is installed. The GUI and Chines
 
 **A catalog entry or implemented protocol is not a guarantee that every model, connection or feature works.** The project does not manage keyboards, headsets, button remapping, macros, lighting, firmware updates or complete onboard profiles. It is not a full replacement for Razer Synapse, Logitech G HUB or Options+.
 
-Detailed technical references are currently in Chinese: [Razer models and protocols](docs/MOUSE_PROTOCOL.md), [Logitech HID++](docs/LOGITECH_PROTOCOL.md), [receivers and Bluetooth](docs/LOGITECH_RECEIVERS.md), [MCHOSE protocol and supported models](docs/MCHOSE_PROTOCOL.md), and [verification scope](docs/COMPATIBILITY.md).
+Detailed technical references are currently in Chinese: [Razer models and protocols](docs/MOUSE_PROTOCOL.md), [Logitech HID++](docs/LOGITECH_PROTOCOL.md), [receivers and Bluetooth](docs/LOGITECH_RECEIVERS.md), [MCHOSE protocol and supported models](docs/MCHOSE_PROTOCOL.md), [read-only MCHOSE capture instructions](docs/MCHOSE_CAPTURE.md), and [verification scope](docs/COMPATIBILITY.md).
 
 ## CLI usage
 

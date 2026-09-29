@@ -57,6 +57,7 @@
 - [罗技 HID++ 功能与限制](docs/LOGITECH_PROTOCOL.md)
 - [罗技接收器、槽位与蓝牙通道](docs/LOGITECH_RECEIVERS.md)
 - [迈从型号、协议与实验性限制](docs/MCHOSE_PROTOCOL.md)
+- [用迈从官网导出只读诊断数据](docs/MCHOSE_CAPTURE.md)
 - [兼容性与验证说明](docs/COMPATIBILITY.md)
 
 ## 命令行
