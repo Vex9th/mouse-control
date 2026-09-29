@@ -74,9 +74,19 @@ go vet -tags gui ./...
 
 ## 前后端契约
 
-前端唯一原生入口是 `window.mouseNativeSubmit(request)`，请求定义在 `frontend/src/types.ts`，返回事件为 `mouse:response`。提交被接受不等于操作成功，前端按请求 ID 等待最终结果。接口仅允许 `scan`、`setDPI` 和 `setRate`；没有任意命令、文件系统或原始 HID 报文接口。
+前端唯一原生入口是 `window.mouseNativeSubmit(request)`，请求定义在 `frontend/src/types.ts`，返回事件为 `mouse:response`。提交被接受不等于操作成功，前端按请求 ID 等待最终结果。设备接口为 `scan`、`setDPI` 和 `setRate`；诊断接口为 `diagnostics`（读取报告）、`copyDiagnostics`（复制报告）和 `openIssue`（打开固定问题模板）。接口不接受任意命令、文件路径、外部 URL 或原始 HID 报文。
 
 Go 串行执行设备操作，独立校验身份、能力、范围和设置读回。前端状态与未提交输入分别由 `workspace.ts`、`drafts.ts` 管理。原生宿主限制导航、弹窗、外部资源和网页设备权限，关闭时等待已经开始的操作结束。
+
+## 错误日志与问题反馈
+
+用户可从错误弹窗或底部“诊断日志”进入报告，点击“复制诊断日志”，再粘贴到 GitHub Issues。中文优先的问题模板位于 `.github/ISSUE_TEMPLATE/bug_report.yml`，包含型号、连接方式、版本、复现步骤、实际结果和多行诊断日志；日志字段使用 `render: text`，保留报告排版。
+
+“提交 Issue”只打开固定地址 `https://github.com/Vex9th/mouse-control/issues/new?template=bug_report.yml`，由用户自行填写并提交。不得将日志、设备身份或其他动态数据拼入 URL，不自动上传日志或调用 GitHub 创建 Issue。
+
+本地日志使用单个 `%LOCALAPPDATA%\MouseControl\logs\error.log`，同时限制为最多 20 条记录、最多 128 KiB；连续重复错误合并并累计次数。保存失败必须在界面提示，不能伪装成保存成功；当前内存报告仍可复制。报告自动脱敏，但用户发布前仍应检查内容；问题模板不索取账号、序列号或完整设备路径。
+
+变更诊断功能时，应验证错误记录与重复合并、记录数及字节上限、脱敏、保存失败后的内存复制，以及“提交 Issue”只打开固定模板。诊断功能用于收集排查信息，不能把日志功能的测试通过当成迈从或其他设备读取问题已经修复。
 
 ## 字体与打包
 
@@ -126,5 +136,9 @@ With Go 1.23+, Node.js 22.12+, Bun and Python 3 installed, run `python scripts/b
 For the CLI, run `go test ./...` and `go build` inside `go/` on Windows. On macOS or Linux, set `GOOS=windows GOARCH=amd64 CGO_ENABLED=0` when building the executable.
 
 The frontend preview is development-only and uses explicit demo data. Native Windows tests require WebView2. Hardware reads and settings tests are opt-in; `RAZER_SETTINGS_TEST=1` performs real, temporary changes and attempts to restore the original values.
+
+Diagnostics are available from an error dialog or “诊断日志” at the bottom. “复制诊断日志” copies the report; “提交 Issue” only opens `https://github.com/Vex9th/mouse-control/issues/new?template=bug_report.yml`, without logs or device data in the URL. Users review, paste and submit reports themselves. Reports are automatically redacted, but should still be checked before posting; account details and serial numbers are not required.
+
+Use one `%LOCALAPPDATA%\MouseControl\logs\error.log` file, capped at 20 records and 128 KiB, merging consecutive duplicate errors with a count. A save failure must remain visible while the current in-memory report is still available to copy. Diagnostic tests do not establish that a device communication failure has been fixed.
 
 GitHub Actions builds Windows x64 GUI/CLI on main pushes, PRs and manual dispatch, retaining artifacts for 7 days. Matching version tags publish new Releases without replacing existing assets. Remote build cleanup requires an explicit verified archive manifest; it defaults to dry-run and preserves the named successful build and shared dependencies.

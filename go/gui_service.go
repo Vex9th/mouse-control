@@ -74,13 +74,16 @@ type guiMutation struct {
 
 // 服务只保留枚举入口，不持有设备句柄；每个请求负责关闭自己的完整枚举结果。
 type guiService struct {
-	enumerate func() ([]device, error)
-	mu        sync.Mutex
-	closed    atomic.Bool
+	enumerate   func() ([]device, error)
+	mu          sync.Mutex
+	closed      atomic.Bool
+	diagnostics atomic.Pointer[guiDiagnosticLog]
 }
 
 func newGUIService(enumerate func() ([]device, error)) *guiService {
-	return &guiService{enumerate: enumerate}
+	s := &guiService{enumerate: enumerate}
+	s.SetDiagnostics(newGUIDiagnosticLog(""))
+	return s
 }
 
 func (s *guiService) begin() error {
@@ -107,17 +110,19 @@ func (s *guiService) begin() error {
 // 先停止接收请求，再等待已接受操作完成；句柄关闭发生在操作释放mu之前。
 func (s *guiService) Close() { s.closed.Store(true); s.mu.Lock(); s.mu.Unlock() }
 
-func (s *guiService) Scan() (guiSnapshot, error) {
+func (s *guiService) Scan() (snapshot guiSnapshot, err error) {
+	var devices []device
+	locked := false
+	defer func() { s.finishDiagnostics(locked, "扫描设备", "", devices, snapshot.Devices, err) }()
 	if err := s.begin(); err != nil {
 		return guiSnapshot{}, err
 	}
-	defer s.mu.Unlock()
-	devices, err := s.enumerate()
-	defer closeDevices(devices)
+	locked = true
+	devices, err = s.enumerate()
 	if err != nil {
 		return guiSnapshot{}, fmt.Errorf("设备枚举失败：%w", err)
 	}
-	snapshot := guiSnapshot{Version: version, Devices: make([]guiDevice, 0, len(devices))}
+	snapshot = guiSnapshot{Version: version, Devices: make([]guiDevice, 0, len(devices))}
 	for _, d := range devices {
 		snapshot.Devices = append(snapshot.Devices, guiReadDevice(d))
 	}
@@ -146,16 +151,18 @@ func guiSelectDevice(devices []device, id string) (device, error) {
 	return selected, nil
 }
 
-func (s *guiService) SetDPI(id string, x, y int) (guiMutation, error) {
+func (s *guiService) SetDPI(id string, x, y int) (result guiMutation, err error) {
+	var devices []device
+	locked := false
+	defer func() { s.finishDiagnostics(locked, "设置 DPI", id, devices, []guiDevice{result.Device}, err) }()
 	if err := s.begin(); err != nil {
 		return guiMutation{}, err
 	}
-	defer s.mu.Unlock()
+	locked = true
 	if strings.TrimSpace(id) == "" {
 		return guiMutation{}, errors.New("必须指定完整设备 ID，未执行设置")
 	}
-	devices, err := s.enumerate()
-	defer closeDevices(devices)
+	devices, err = s.enumerate()
 	if err != nil {
 		return guiMutation{}, fmt.Errorf("设备枚举失败：%w", err)
 	}
@@ -174,16 +181,18 @@ func (s *guiService) SetDPI(id string, x, y int) (guiMutation, error) {
 	return guiMutation{Message: message, Changed: changed, Device: guiReadDevice(d)}, nil
 }
 
-func (s *guiService) SetRate(id string, rate int) (guiMutation, error) {
+func (s *guiService) SetRate(id string, rate int) (result guiMutation, err error) {
+	var devices []device
+	locked := false
+	defer func() { s.finishDiagnostics(locked, "设置回报率", id, devices, []guiDevice{result.Device}, err) }()
 	if err := s.begin(); err != nil {
 		return guiMutation{}, err
 	}
-	defer s.mu.Unlock()
+	locked = true
 	if strings.TrimSpace(id) == "" {
 		return guiMutation{}, errors.New("必须指定完整设备 ID，未执行设置")
 	}
-	devices, err := s.enumerate()
-	defer closeDevices(devices)
+	devices, err = s.enumerate()
 	if err != nil {
 		return guiMutation{}, fmt.Errorf("设备枚举失败：%w", err)
 	}

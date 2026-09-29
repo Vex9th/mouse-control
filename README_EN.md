@@ -1,6 +1,6 @@
 # MouseControl · Razer, Logitech & MCHOSE Mouse Utility
 
-[中文](README.md) · **English** · [Download](https://github.com/Vex9th/mouse-control/releases/latest) · [Report an issue](https://github.com/Vex9th/mouse-control/issues)
+[中文](README.md) · **English** · [Download](https://github.com/Vex9th/mouse-control/releases/latest) · [Report an issue](https://github.com/Vex9th/mouse-control/issues/new?template=bug_report.yml)
 
 A lightweight **Windows mouse battery monitor and settings tool** for **Razer and Logitech** mice. Check battery level, charging status, current DPI and polling rate, then adjust supported settings through a desktop GUI or CLI. Multiple devices are identified separately. MCHOSE new-protocol mice have experimental read-only support.
 
@@ -16,8 +16,8 @@ For **Windows 10 / 11 x64**. Download from [Releases](https://github.com/Vex9th/
 
 | File | Purpose |
 | --- | --- |
-| `MouseControl-1.5.0-windows-x64.zip` | Portable GUI. Extract and run `MouseControl.exe`. |
-| `RazerBattery-1.5.0-windows-x64.zip` | Portable CLI, help and third-party notices. Extract and run `RazerBattery.exe` for the interactive menu. |
+| `MouseControl-1.5.1-windows-x64.zip` | Portable GUI. Extract and run `MouseControl.exe`. |
+| `RazerBattery-1.5.1-windows-x64.zip` | Portable CLI, help and third-party notices. Extract and run `RazerBattery.exe` for the interactive menu. |
 | `SHA256SUMS.txt` | SHA256 checksums for the downloads. |
 
 The GUI requires **Microsoft Edge WebView2 Runtime**. Windows 11 includes it; if missing, install the Evergreen Runtime from [Microsoft](https://developer.microsoft.com/microsoft-edge/webview2/). Running the application does not require Node.js, Python or Go.
@@ -38,6 +38,7 @@ No background service, account or startup entry is installed. The GUI and Chines
 - **GUI and CLI:** A compact Vue 3 + Naive UI desktop interface, interactive CLI menu, one-shot queries and periodic output.
 - **Compact layout:** Default client area of 900×480 logical pixels, minimum 760×440. Device lists, details and long messages are paginated.
 - **Read-back verification:** Unchanged values skip writes. Timeouts and mismatches remain visible errors; settings are not automatically retried.
+- **Diagnostics:** View and copy reports from an error dialog or “诊断日志” (Diagnostics) at the bottom. Open the GitHub issue template and submit the report yourself.
 
 ## Compatibility
 
@@ -90,7 +91,7 @@ A disconnected selection never redirects a setting to another mouse. Some Razer 
 
 **Does it need to keep running?** No. Open it to read or change settings and close it when finished. There is no resident service or automatic startup.
 
-**Why is a value unknown or unavailable?** The mouse may be asleep, disconnected or powered off, or its current connection may not expose that feature. Move the mouse and refresh, then inspect Details for the original error. Battery levels or voltages are not converted into fabricated percentages.
+**Why is a value unknown or unavailable?** The mouse may be asleep, disconnected or powered off, or its current connection may not expose that feature. Move the mouse and refresh. If an error remains, view and copy its report from the error dialog or “诊断日志” (Diagnostics) at the bottom. Battery levels or voltages are not converted into fabricated percentages.
 
 **Can it run alongside vendor software?** Applications may compete for the same device channel or settings. If communication fails, close other mouse-management software before retrying a read. All coexistence combinations have not been tested.
 
@@ -125,7 +126,11 @@ The GUI is written to `dist/MouseControl.exe`. Dependency versions are recorded 
 
 ## Feedback and references
 
-When opening an [issue](https://github.com/Vex9th/mouse-control/issues), include the device model, connection type, Windows version, application version and error message. Device paths can contain serial numbers; redact serial numbers and personal information before posting logs.
+When an error occurs, open its dialog or “诊断日志” (Diagnostics) at the bottom and click “复制诊断日志” (Copy diagnostics). “提交 Issue” (Report an issue) opens the fixed [GitHub issue template](https://github.com/Vex9th/mouse-control/issues/new?template=bug_report.yml). Fill in the mouse model, connection type, application and Windows versions, reproduction steps and actual result, then paste the report into Diagnostics. Review and submit the issue yourself; the application never sends logs or creates an issue automatically.
+
+Reports are automatically redacted, but review their contents before posting. Account details, serial numbers and full device paths are not needed. If the application cannot open or the report cannot be copied, explain that in the template.
+
+Local errors are stored in a single `%LOCALAPPDATA%\MouseControl\logs\error.log` file, limited to 20 records and 128 KiB. Consecutive duplicate errors are merged with an occurrence count. If saving fails, the application reports the failure and still lets you copy the current in-memory diagnostic report.
 
 Maintained by [Vex9th](https://github.com/Vex9th). Protocol references include [OpenRazer](https://github.com/openrazer/openrazer), [Logitech HID++ documentation](https://github.com/Logitech/cpg-docs), [Solaar](https://github.com/pwr-Solaar/Solaar), [libratbag](https://github.com/libratbag/libratbag), Linux HID drivers and the [official MCHOSE web driver](https://www.mchose.com.cn/#/connectDevice). Pinned versions and field references are documented in the protocol guides. Dependency and font licenses are preserved in [Third-party notices](docs/THIRD_PARTY_NOTICES.txt).
 

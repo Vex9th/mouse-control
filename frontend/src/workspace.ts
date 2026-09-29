@@ -9,7 +9,7 @@ export interface WorkspaceState {
   stale: boolean
   deviceUpdatedAt: Record<string, string>
 }
-export function createWorkspace(api: MouseAPI) {
+export function createWorkspace(api: Pick<MouseAPI, 'scan' | 'setDPI' | 'setRate' | 'dispose'>) {
   const state = reactive<WorkspaceState>({ snapshot: null, selectedId: null, busy: '', error: '', notice: '', stale: false, deviceUpdatedAt: {} })
   let generation = 0, closed = false
   const selected = (): MouseDevice | null => state.snapshot?.devices.find(d => d.id === state.selectedId) ?? null

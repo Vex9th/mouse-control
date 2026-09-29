@@ -112,6 +112,7 @@ func runDesktop() (resultErr error) {
 	if err != nil {
 		return fmt.Errorf("无法获取用户缓存目录：%w", err)
 	}
+	w.service.SetDiagnostics(newGUIDiagnosticLog(filepath.Join(dataRoot, "MouseControl", "logs", "error.log")))
 	w.view = newDesktopEngine(w.hwnd, filepath.Join(dataRoot, "MouseControl", "WebView2"), w.receive)
 	defer w.view.Close()
 	if err := w.view.Initialize(); err != nil {
@@ -343,6 +344,26 @@ func (w *desktopWindow) receive(source, raw string) {
 		if request.Token == w.token && request.ID != "" {
 			w.deliver(desktopReply{ID: request.ID, Error: err.Error()})
 		}
+		return
+	}
+	// 诊断读取不访问设备，鼠标超时期间也能复制已有错误。
+	if request.Action == "diagnostics" || request.Action == "copyDiagnostics" || request.Action == "openIssue" {
+		reply := desktopReply{ID: request.ID}
+		if request.Action == "openIssue" {
+			err = desktopOpenIssue()
+			reply.Result = map[string]bool{"opened": err == nil}
+		} else {
+			report := w.service.Diagnostics()
+			reply.Result = report
+			if request.Action == "copyDiagnostics" {
+				err = desktopCopyText(w.hwnd, report.Text)
+			}
+		}
+		if err != nil {
+			reply.Result = nil
+			reply.Error = err.Error()
+		}
+		w.deliver(reply)
 		return
 	}
 	if !w.busy.CompareAndSwap(false, true) {

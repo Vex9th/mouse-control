@@ -63,3 +63,34 @@ test('迈从只读结果通过桥接校验，未支持品牌仍被拒绝', async
   }
   api.dispose()
 })
+
+test('诊断日志校验完整字段与字节上限，复制只在原生成功后确认', async () => {
+  const target = new EventTarget(); let request!: MouseRequest
+  const api = new NativeMouseAPI({ events: target, submit: async q => { request = q; return true } }, 100)
+  const report = { text: '鼠标工具 1.5.1\n设备响应格式不匹配', location: '%LOCALAPPDATA%\\MouseControl\\logs\\error.log', saveError: '' }
+  for (const value of [report, { ...report, text: null }, { ...report, text: '错'.repeat(50_000) }]) {
+    const result = api.diagnostics()
+    expect(request.action).toBe('diagnostics')
+    target.dispatchEvent(new CustomEvent('mouse:response', { detail: { id: request.id, result: value } }))
+    if (value === report) expect((await result).text).toContain('响应格式不匹配')
+    else await expect(result).rejects.toThrow('日志格式无效')
+  }
+  const copying = api.copyDiagnostics()
+  expect(request.action).toBe('copyDiagnostics')
+  target.dispatchEvent(new CustomEvent('mouse:response', { detail: { id: request.id, error: '剪贴板正被其他程序使用' } }))
+  await expect(copying).rejects.toThrow('剪贴板')
+  api.dispose()
+})
+
+test('提交问题必须等待打开页面的成功回执', async () => {
+  const target = new EventTarget(); let request!: MouseRequest
+  const api = new NativeMouseAPI({ events: target, submit: async q => { request = q; return true } }, 100)
+  for (const value of [{ opened: true }, { opened: false }, {}]) {
+    const result = api.openIssue()
+    expect(request.action).toBe('openIssue')
+    target.dispatchEvent(new CustomEvent('mouse:response', { detail: { id: request.id, result: value } }))
+    if ('opened' in value && value.opened) await result
+    else await expect(result).rejects.toThrow('未能确认')
+  }
+  api.dispose()
+})

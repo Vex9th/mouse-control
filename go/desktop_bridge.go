@@ -73,9 +73,9 @@ func decodeDesktopRequest(raw, token string) (desktopRequest, error) {
 		return r, errors.New("设备标识过长")
 	}
 	switch r.Action {
-	case "scan":
+	case "scan", "diagnostics", "copyDiagnostics", "openIssue":
 		if r.DeviceID != "" || r.X != 0 || r.Y != 0 || r.Rate != 0 {
-			return r, errors.New("刷新请求不接受设置参数")
+			return r, errors.New("此请求不接受设置参数")
 		}
 	case "setDPI":
 		if r.DeviceID == "" || r.X < 1 || r.X > 65535 || r.Y < 1 || r.Y > 65535 || r.Rate != 0 {
@@ -105,6 +105,8 @@ func executeDesktopRequest(s *guiService, r desktopRequest) desktopReply {
 	var result any
 	var err error
 	switch r.Action {
+	case "diagnostics":
+		result = s.Diagnostics()
 	case "scan":
 		result, err = s.Scan()
 	case "setDPI":

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { zhCN, NButton, NCard, NConfigProvider, NGlobalStyle, NIcon, NInput, NModal, NPagination, NPopover, NProgress, NRadioButton, NRadioGroup, NSwitch, NTag, NText } from 'naive-ui'
-import { AlertCircle, Check, ChevronDown, InfoCircle, Mouse, Refresh } from '@vicons/tabler'
+import { darkTheme, zhCN, NButton, NCard, NConfigProvider, NGlobalStyle, NIcon, NInput, NModal, NPagination, NPopover, NProgress, NRadioButton, NRadioGroup, NSwitch, NTag, NText } from 'naive-ui'
+import { AlertCircle, Clipboard, Check, ExternalLink, FileText, ChevronDown, InfoCircle, Mouse, Refresh } from '@vicons/tabler'
 import type { MouseAPI } from './types'
 import { vendorNames } from './types'
 import { createWorkspace } from './workspace'
@@ -54,20 +54,72 @@ const visibleDevices = computed(() => devices.value.slice((devicePage.value - 1)
 watch(devicePageCount, count => { devicePage.value = Math.min(devicePage.value, count) })
 function chooseDevice(id: string): void { workspace.select(id); devicePicker.value = false }
 
+const viewerSupport = ref(false), viewerDiagnostic = ref(false), supportBusy = ref(false), supportNotice = ref(''), supportFailure = ref(false)
+let viewerSession = 0
 const viewerOpen = ref(false), viewerTitle = ref(''), viewerPages = ref<string[]>(['']), viewerPage = ref(1)
-function showText(title: string, text: string): void {
+function showText(title: string, text: string, support = false): void {
+  viewerSession++
+  viewerSupport.value = support
+  viewerDiagnostic.value = false
+  supportNotice.value = ''
+  supportFailure.value = false
   viewerTitle.value = title
-  viewerPages.value = paginateText(text || '未提供', 26, 7)
+  viewerPages.value = paginateText(text || '未提供', 26, support ? 5 : 7)
   viewerPage.value = 1
   viewerOpen.value = true
 }
-function showDeviceDetails(): void { if (selected.value) showText('设备详情', deviceReport(selected.value, updatedAt.value)) }
+function showDeviceDetails(): void { if (selected.value) showText('设备详情', deviceReport(selected.value, updatedAt.value), true) }
 const dpiIssue = computed(() => dpiDirty.value && dpiValidation.value.error || dpiBlocked.value || selected.value?.dpi.error || '')
 const rateIssue = computed(() => rateDirty.value && rateValidation.value.error || rateBlocked.value || selected.value?.rate.error || '')
 const batteryIssue = computed(() => selected.value?.battery.error || selected.value?.capabilities.batteryReason || '')
 const feedback = computed(() => state.error || state.notice)
-function showFeedback(): void { showText(state.error ? '完整错误信息' : '操作结果', feedback.value + (state.stale ? '\n\n保留的是上次读数，请先刷新再设置。' : '')) }
+function showFeedback(): void { showText(state.error ? '完整错误信息' : '操作结果', feedback.value + (state.stale ? '\n\n保留的是上次读数，请先刷新再设置。' : ''), !!state.error) }
 function showDPIRanges(): void { if (selected.value) showText('DPI 范围', formatDPIRanges(selected.value.capabilities.dpiRanges) + (!linked.value ? '\nY 轴提交时按设备报告单独校验' : '')) }
+function reportText(report: import('./types').DiagnosticReport): string {
+  return (report.saveError ? '日志保存失败：' + report.saveError + '\n仍可复制本次内存日志。\n\n' : '') + report.text + '\n\n日志位置：' + report.location
+}
+async function showDiagnostics(): Promise<void> {
+  showText('诊断日志', '正在读取本地日志…', true)
+  viewerDiagnostic.value = true
+  const session = viewerSession
+  supportBusy.value = true
+  try {
+    const report = await props.api.diagnostics()
+    if (session === viewerSession) viewerPages.value = paginateText(reportText(report), 26, 5)
+  } catch (error) {
+    if (session === viewerSession) viewerPages.value = paginateText(String(error instanceof Error ? error.message : error), 26, 5)
+  } finally { supportBusy.value = false }
+}
+async function supportAction(action: 'copy' | 'issue'): Promise<void> {
+  if (supportBusy.value) return
+  supportBusy.value = true
+  const session = viewerSession
+  try {
+    if (action === 'copy') {
+      const report = await props.api.copyDiagnostics()
+      if (session !== viewerSession) return
+      if (report.saveError) {
+        showText('诊断日志', reportText(report), true)
+        viewerDiagnostic.value = true
+        supportNotice.value = '已复制内存日志，但本地保存失败；完整原因见上方。'
+        supportFailure.value = true
+        return
+      }
+      if (viewerDiagnostic.value) { viewerPages.value = paginateText(reportText(report), 26, 5); viewerPage.value = 1 }
+      supportNotice.value = '已复制。请在 Issue 的「诊断日志」栏粘贴，发送前检查内容。'
+    } else {
+      await props.api.openIssue()
+      if (session !== viewerSession) return
+      supportNotice.value = '已请求浏览器打开反馈页，请粘贴日志并填写复现步骤。'
+    }
+    supportFailure.value = false
+  } catch (error) {
+    if (session !== viewerSession) return
+    showText('反馈操作失败', String(error instanceof Error ? error.message : error), true)
+    supportNotice.value = '操作未完成，可查看完整原因后重试。'
+    supportFailure.value = true
+  } finally { supportBusy.value = false }
+}
 const quietStatus = computed(() => {
   if (busy.value) return state.busy === 'scan' ? '正在读取设备…' : '正在设置并读回确认…'
   if (autoRefresh.value && draftsPending.value) return '存在未提交输入，自动刷新已暂停'
@@ -83,7 +135,7 @@ onBeforeUnmount(() => { clearInterval(refreshTimer); workspace.dispose() })
 </script>
 
 <template>
-  <NConfigProvider :theme-overrides="mouseTheme" :locale="zhCN" class="app-provider">
+  <NConfigProvider :theme="darkTheme" :theme-overrides="mouseTheme" :locale="zhCN" class="app-provider">
     <NGlobalStyle/>
     <main class="app-frame" :aria-busy="busy" :data-selected-id="state.selectedId" :data-state="selected ? 'ready' : busy ? 'loading' : mode === 'unavailable' ? 'unavailable' : 'empty'">
       <header class="toolbar">
@@ -119,7 +171,7 @@ onBeforeUnmount(() => { clearInterval(refreshTimer); workspace.dispose() })
         <div class="summary-battery">
           <div class="battery-heading"><NText depth="3" class="secondary-text">剩余电量</NText><NText class="battery-value">{{ selected.capabilities.battery && battery?.hasValue ? battery.value : '未知' }}<span v-if="selected.capabilities.battery && battery?.hasValue">{{ battery.unit }}</span></NText></div>
           <NProgress v-if="selected.battery.percent !== null" type="line" :percentage="selected.battery.percent" :show-indicator="false" :height="4" :status="battery?.low ? 'warning' : 'default'"/>
-          <NButton v-if="batteryIssue" text type="warning" size="tiny" class="single-line-button" @click="showText('电量信息', batteryIssue)"><span class="ellipsis">{{ batteryIssue }}</span><template #icon><NIcon :component="AlertCircle"/></template></NButton>
+          <NButton v-if="batteryIssue" text type="warning" size="tiny" class="single-line-button" @click="showText('电量信息', batteryIssue, true)"><span class="ellipsis">{{ batteryIssue }}</span><template #icon><NIcon :component="AlertCircle"/></template></NButton>
           <NText v-else depth="3" class="secondary-text ellipsis">{{ battery?.detail || '设备未提供电量信息' }}</NText>
         </div>
       </NCard>
@@ -138,7 +190,7 @@ onBeforeUnmount(() => { clearInterval(refreshTimer); workspace.dispose() })
               <div class="preset-row" aria-label="常用 DPI"><NButton v-for="preset in presets" :key="preset" size="tiny" :type="dpiX === String(preset) ? 'primary' : 'default'" :secondary="dpiX === String(preset)" :disabled="noWrite || !!dpiBlocked" @click="choosePreset(preset)">{{ preset }}</NButton></div>
               <div class="range-row"><NText id="dpi-range" depth="3" class="secondary-text ellipsis">{{ selected.capabilities.dpiRanges.length ? formatDPIRanges(selected.capabilities.dpiRanges) : '未提供 DPI 范围' }}{{ !linked ? ' · Y 轴单独校验' : '' }}</NText><NButton v-if="selected.capabilities.dpiRanges.length" text size="tiny" aria-label="查看完整 DPI 范围" @click="showDPIRanges"><NIcon :component="InfoCircle" :size="15"/></NButton></div>
             </div>
-            <div class="panel-footer"><NButton v-if="dpiIssue" text type="warning" size="tiny" class="single-line-button" @click="showText('DPI 状态', dpiIssue)"><span class="ellipsis">{{ dpiIssue }}</span><template #icon><NIcon :component="AlertCircle"/></template></NButton><NText v-else depth="3" class="secondary-text">{{ dpiSame ? '已是当前值' : '设置后读回确认' }}</NText><NButton attr-type="submit" type="primary" size="small" :loading="state.busy === 'dpi'" :disabled="noWrite || !dpiValidation.value || dpiSame">应用 DPI</NButton></div>
+            <div class="panel-footer"><NButton v-if="dpiIssue" text type="warning" size="tiny" class="single-line-button" @click="showText('DPI 状态', dpiIssue, true)"><span class="ellipsis">{{ dpiIssue }}</span><template #icon><NIcon :component="AlertCircle"/></template></NButton><NText v-else depth="3" class="secondary-text">{{ dpiSame ? '已是当前值' : '设置后读回确认' }}</NText><NButton attr-type="submit" type="primary" size="small" :loading="state.busy === 'dpi'" :disabled="noWrite || !dpiValidation.value || dpiSame">应用 DPI</NButton></div>
           </form>
         </NCard>
         <NCard class="control-panel" content-class="control-panel-content" content-style="padding: var(--control-padding)" size="small" :bordered="false">
@@ -150,7 +202,7 @@ onBeforeUnmount(() => { clearInterval(refreshTimer); workspace.dispose() })
               <NText v-if="!selected.capabilities.pollRates.length" depth="3" class="secondary-text">设备未提供可设置档位</NText>
               <NText depth="3" class="secondary-text rate-note">更高的回报率通常会增加耗电。</NText>
             </div>
-            <div class="panel-footer"><NButton v-if="rateIssue" text type="warning" size="tiny" class="single-line-button" @click="showText('回报率状态', rateIssue)"><span class="ellipsis">{{ rateIssue }}</span><template #icon><NIcon :component="AlertCircle"/></template></NButton><NText v-else depth="3" class="secondary-text">{{ rateSame ? '已是当前值' : '设置后读回确认' }}</NText><NButton attr-type="submit" type="primary" size="small" :loading="state.busy === 'rate'" :disabled="noWrite || rateValidation.value === null || rateSame">应用回报率</NButton></div>
+            <div class="panel-footer"><NButton v-if="rateIssue" text type="warning" size="tiny" class="single-line-button" @click="showText('回报率状态', rateIssue, true)"><span class="ellipsis">{{ rateIssue }}</span><template #icon><NIcon :component="AlertCircle"/></template></NButton><NText v-else depth="3" class="secondary-text">{{ rateSame ? '已是当前值' : '设置后读回确认' }}</NText><NButton attr-type="submit" type="primary" size="small" :loading="state.busy === 'rate'" :disabled="noWrite || rateValidation.value === null || rateSame">应用回报率</NButton></div>
           </form>
         </NCard>
       </div>
@@ -163,12 +215,15 @@ onBeforeUnmount(() => { clearInterval(refreshTimer); workspace.dispose() })
       <footer class="status-bar" :role="state.error ? 'alert' : 'status'">
         <NButton v-if="feedback" text size="tiny" :type="state.error ? 'warning' : 'success'" class="feedback-button" :aria-label="state.error ? '查看完整错误信息' : '查看操作结果'" @click="showFeedback"><template #icon><NIcon :component="state.error ? AlertCircle : Check"/></template><span class="ellipsis">{{ feedback }}</span><span class="feedback-more">查看</span></NButton>
         <NText v-else depth="3" class="status-copy secondary-text">{{ quietStatus }}</NText>
-        <NButton text size="small" :disabled="!selected" @click="showDeviceDetails"><template #icon><NIcon :component="InfoCircle" :size="17"/></template>设备详情</NButton>
+        <div class="status-actions"><NButton text size="small" :disabled="mode === 'unavailable' || supportBusy" @click="showDiagnostics"><template #icon><NIcon :component="FileText" :size="16"/></template>诊断日志</NButton><NButton text size="small" :disabled="!selected" @click="showDeviceDetails"><template #icon><NIcon :component="InfoCircle" :size="17"/></template>设备详情</NButton></div>
       </footer>
     </main>
     <NModal v-model:show="viewerOpen" preset="card" size="small" :title="viewerTitle" :bordered="false" class="text-viewer" :mask-closable="true" :segmented="{ content: true, footer: 'soft' }">
-      <div class="document-page">{{ viewerPages[viewerPage - 1] }}</div>
-      <template #footer><div class="viewer-footer"><NText depth="3" class="secondary-text">原文完整保留，可逐页查看</NText><NPagination v-model:page="viewerPage" :page-count="viewerPages.length" simple size="small" aria-label="详情内容分页"/></div></template>
+      <div class="document-page" :class="{ 'support-document': viewerSupport }">{{ viewerPages[viewerPage - 1] }}</div>
+      <template #footer><div class="viewer-footer-stack">
+        <div v-if="viewerSupport" class="support-actions"><NButton type="primary" size="small" :loading="supportBusy" :disabled="mode === 'unavailable'" @click="supportAction('copy')"><template #icon><NIcon :component="Clipboard"/></template>复制诊断日志</NButton><NButton size="small" :disabled="supportBusy || mode === 'unavailable'" @click="supportAction('issue')"><template #icon><NIcon :component="ExternalLink"/></template>提交 Issue</NButton></div>
+        <NText v-if="viewerSupport" :type="supportFailure ? 'warning' : undefined" depth="3" class="support-hint secondary-text" aria-live="polite">{{ supportNotice || '提交 Issue 前，请复制诊断日志并粘贴到反馈页面；发送前检查内容。' }}</NText>
+        <div class="viewer-footer"><NText depth="3" class="secondary-text">原文完整保留，可逐页查看</NText><NPagination v-model:page="viewerPage" :page-count="viewerPages.length" simple size="small" aria-label="详情内容分页"/></div></div></template>
     </NModal>
   </NConfigProvider>
 </template>

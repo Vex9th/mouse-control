@@ -1,4 +1,4 @@
-import type { MouseAPI, MouseDevice, MouseRequest, Mutation, Snapshot } from './types'
+import type { DiagnosticReport, MouseAPI, MouseDevice, MouseRequest, Mutation, Snapshot } from './types'
 interface NativeHost { events: EventTarget; submit: (request: MouseRequest) => Promise<boolean> }
 interface Pending { resolve: (value: unknown) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }
 let sequence = 0
@@ -29,6 +29,11 @@ function isSnapshot(value: unknown): value is Snapshot {
 }
 function isMutation(value: unknown): value is Mutation {
   return object(value) && typeof value.message === 'string' && typeof value.changed === 'boolean' && isDevice(value.device)
+}
+function isDiagnosticReport(value: unknown): value is DiagnosticReport {
+  return object(value) && strings(value, ['text', 'location', 'saveError'])
+    && new TextEncoder().encode(value.text as string).length <= 128 * 1024
+    && (value.location as string).length <= 512 && (value.saveError as string).length <= 4096
 }
 export class NativeMouseAPI implements MouseAPI {
   private pending = new Map<string, Pending>()
@@ -77,6 +82,17 @@ export class NativeMouseAPI implements MouseAPI {
     if (!isMutation(value)) throw new Error('本机服务返回的设置结果格式无效，请刷新确认。')
     return value
   }
+  async diagnostics(): Promise<DiagnosticReport> { return this.diagnosticRequest('diagnostics') }
+  async copyDiagnostics(): Promise<DiagnosticReport> { return this.diagnosticRequest('copyDiagnostics') }
+  private async diagnosticRequest(action: 'diagnostics' | 'copyDiagnostics'): Promise<DiagnosticReport> {
+    const value = await this.request({ action })
+    if (!isDiagnosticReport(value)) throw new Error('本机服务返回的诊断日志格式无效。')
+    return value
+  }
+  async openIssue(): Promise<void> {
+    const value = await this.request({ action: 'openIssue' })
+    if (!object(value) || value.opened !== true) throw new Error('未能确认问题反馈页面已打开。')
+  }
   dispose(): void {
     this.closed = true
     this.host.events.removeEventListener('mouse:response', this.response)
@@ -89,6 +105,9 @@ export class UnavailableMouseAPI implements MouseAPI {
   async scan(): Promise<Snapshot> { return this.unavailable() }
   async setDPI(): Promise<Mutation> { return this.unavailable() }
   async setRate(): Promise<Mutation> { return this.unavailable() }
+  async diagnostics(): Promise<DiagnosticReport> { return this.unavailable() }
+  async copyDiagnostics(): Promise<DiagnosticReport> { return this.unavailable() }
+  async openIssue(): Promise<void> { return this.unavailable() }
 }
 export async function createProvider(): Promise<{ api: MouseAPI; mode: 'native' | 'demo' | 'unavailable' }> {
   if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('demo') === '1') {

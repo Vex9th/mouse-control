@@ -1,0 +1,63 @@
+name: 问题反馈 / Bug report
+description: 反馈鼠标识别、读取、设置或界面问题。
+title: "[问题] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请填写问题发生时的设备和操作信息。
+        在程序错误弹窗或底部“诊断日志”中点击“复制诊断日志”，再粘贴到下面的诊断日志栏。
+        报告会自动脱敏，提交前仍请检查内容；无需填写账号、序列号或完整设备路径。
+        程序的“提交 Issue”只打开本模板，不会自动发送日志或提交 Issue。
+  - type: input
+    id: device_model
+    attributes:
+      label: 鼠标型号 / Mouse model
+      description: 请填写品牌和完整商品型号，不需要序列号。
+      placeholder: 例如：品牌 + 型号
+    validations:
+      required: true
+  - type: input
+    id: connection
+    attributes:
+      label: 连接方式 / Connection
+      description: 填写出现问题时的连接方式；同时插着 USB 线和接收器时也请说明。
+      placeholder: USB 有线 / 2.4 GHz 接收器 / 蓝牙
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 程序版本与 Windows 版本 / Versions
+      description: 填写正在使用的程序版本及 Windows 版本。
+      placeholder: 程序版本：…；Windows 版本：…
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤 / Steps to reproduce
+      description: 从打开程序开始，说明做了哪些操作、问题是否每次都出现。
+      placeholder: |
+        1. 连接鼠标并打开程序
+        2. …
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: actual_result
+    attributes:
+      label: 实际结果 / Actual result
+      description: 描述错误提示或异常表现，也可补充你预期的结果。
+      placeholder: 实际显示…；预期应当…
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 诊断日志 / Diagnostics
+      description: 点击程序错误弹窗或底部“诊断日志”中的“复制诊断日志”后粘贴。日志会自动脱敏，提交前仍请检查；不需要账号或序列号。如果程序无法打开或无法复制，可留空并在“实际结果”中说明。
+      placeholder: 在这里粘贴复制的诊断报告
+      render: text
+    validations:
+      required: false

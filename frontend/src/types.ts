@@ -35,14 +35,18 @@ export interface MouseDevice {
 }
 export interface Snapshot { version: string; scannedAt: string; devices: MouseDevice[] }
 export interface Mutation { message: string; changed: boolean; device: MouseDevice }
+export interface DiagnosticReport { text: string; location: string; saveError: string }
 export interface MouseAPI {
   scan(): Promise<Snapshot>
   setDPI(deviceId: string, x: number, y: number): Promise<Mutation>
   setRate(deviceId: string, rate: number): Promise<Mutation>
+  diagnostics(): Promise<DiagnosticReport>
+  copyDiagnostics(): Promise<DiagnosticReport>
+  openIssue(): Promise<void>
   dispose?(): void
 }
 export type MouseRequest =
-  | { id: string; action: 'scan' }
+  | { id: string; action: 'scan' | 'diagnostics' | 'copyDiagnostics' | 'openIssue' }
   | { id: string; action: 'setDPI'; deviceId: string; x: number; y: number }
   | { id: string; action: 'setRate'; deviceId: string; rate: number }
 export interface NativeResponse { id: string; result?: unknown; error?: string }

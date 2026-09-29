@@ -61,3 +61,18 @@ func TestDesktopDocumentEmbedsBridgeAndRestrictsContent(t *testing.T) {
 		t.Fatal("接受了超出NavigateToString上限的页面")
 	}
 }
+
+func TestDesktopDiagnosticActionsRejectDeviceParameters(t *testing.T) {
+	token := strings.Repeat("a", 64)
+	for _, action := range []string{"diagnostics", "copyDiagnostics", "openIssue"} {
+		raw := `{"id":"support-1","token":"` + token + `","action":"` + action + `"}`
+		if _, err := decodeDesktopRequest(raw, token); err != nil {
+			t.Fatalf("%s: %v", action, err)
+		}
+		for _, extra := range []string{`,"deviceId":"usb:mouse"`, `,"x":1`, `,"rate":125`, `,"url":"https://example.com"`, `,"text":"arbitrary"`} {
+			if _, err := decodeDesktopRequest(strings.TrimSuffix(raw, "}")+extra+"}", token); err == nil {
+				t.Fatalf("%s 接受了外部参数 %s", action, extra)
+			}
+		}
+	}
+}

@@ -3,7 +3,7 @@ import { createWorkspace } from '../src/workspace'
 import type { MouseAPI, Snapshot } from '../src/types'
 import { device, snapshot } from './fixtures'
 function deferred<T>() { let resolve!: (value: T) => void; let reject!: (error: Error) => void; const promise = new Promise<T>((a, b) => { resolve = a; reject = b }); return { promise, resolve, reject } }
-function apiWithScan(scan: () => Promise<Snapshot>): MouseAPI { return { scan, setDPI: async () => { throw Error('unexpected write') }, setRate: async () => { throw Error('unexpected write') } } }
+function apiWithScan(scan: () => Promise<Snapshot>): Pick<MouseAPI, 'scan' | 'setDPI' | 'setRate'> { return { scan, setDPI: async () => { throw Error('unexpected write') }, setRate: async () => { throw Error('unexpected write') } } }
 
 test('设备断开保留选择，不自动切换到替代鼠标', async () => {
   let devices = [device('one')]

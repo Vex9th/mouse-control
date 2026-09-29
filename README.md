@@ -1,6 +1,6 @@
 # MouseControl · 雷蛇 / 罗技 / 迈从鼠标工具
 
-**中文** · [English](README_EN.md) · [下载](https://github.com/Vex9th/mouse-control/releases/latest) · [反馈问题](https://github.com/Vex9th/mouse-control/issues)
+**中文** · [English](README_EN.md) · [下载](https://github.com/Vex9th/mouse-control/releases/latest) · [反馈问题](https://github.com/Vex9th/mouse-control/issues/new?template=bug_report.yml)
 
 轻量的 Windows 鼠标电量查询与设置工具，提供中文 GUI 和 CLI。查看 **Razer 雷蛇 / Logitech 罗技鼠标电量、充电状态、当前 DPI 和回报率**，并根据设备能力调整 DPI 与 polling rate。新增 **MCHOSE 迈从新协议鼠标的实验性只读支持**。支持多设备识别，连接和功能范围见下表。
 
@@ -16,8 +16,8 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `MouseControl-1.5.0-windows-x64.zip` | 桌面版；解压后打开 `MouseControl.exe` |
-| `RazerBattery-1.5.0-windows-x64.zip` | 命令行版，包含使用帮助和第三方许可；解压后运行 `RazerBattery.exe` |
+| `MouseControl-1.5.1-windows-x64.zip` | 桌面版；解压后打开 `MouseControl.exe` |
+| `RazerBattery-1.5.1-windows-x64.zip` | 命令行版，包含使用帮助和第三方许可；解压后运行 `RazerBattery.exe` |
 | `SHA256SUMS.txt` | 下载文件的 SHA256 校验值 |
 
 桌面版使用系统 **Microsoft Edge WebView2 Runtime**。Windows 11 包含该运行时；缺少时可从 [Microsoft 官方页面](https://developer.microsoft.com/microsoft-edge/webview2/) 安装 Evergreen Runtime。使用程序无需 Node.js、Python 或 Go。
@@ -38,6 +38,7 @@
 - **GUI + CLI**：中文桌面界面和命令行查询、交互菜单、定时查看。
 - **紧凑界面**：Vue 3 + Naive UI，默认 900×480、最小 760×440 逻辑像素；设备列表、详情和长消息使用分页。
 - **设置读回**：当前值相同则跳过写入；修改后再次读取。超时或结果不一致会明确报告，不自动重发设置。
+- **诊断反馈**：错误弹窗和底部“诊断日志”提供报告查看与复制；可打开 GitHub 问题模板，由你自行提交。
 
 ## 支持范围
 
@@ -94,7 +95,7 @@
 
 **需要一直运行吗？** 不需要。需要时打开查询或设置，用完可以关闭；没有常驻服务或开机自启。
 
-**为什么显示“未知”或“暂不可用”？** 鼠标可能休眠、关机、断开，或当前连接没有提供相关接口。先移动鼠标并刷新，通过“详情”查看原始错误。只有等级或电压时不会换算成虚构百分比。
+**为什么显示“未知”或“暂不可用”？** 鼠标可能休眠、关机、断开，或当前连接没有提供相关接口。先移动鼠标并刷新；仍有错误时，可从错误弹窗或底部“诊断日志”查看并复制报告。只有等级或电压时不会换算成虚构百分比。
 
 **和雷云、G HUB 同时运行会怎样？** 多个程序可能争用设备通道或修改同一参数。遇到通信异常时，可先关闭其他鼠标管理软件再读取；本项目没有验证所有共存组合。
 
@@ -127,7 +128,11 @@ GUI 输出为 `dist/MouseControl.exe`。Go 模块和前端依赖使用项目内�
 
 ## 反馈与来源
 
-提交 [Issue](https://github.com/Vex9th/mouse-control/issues) 时，请提供鼠标型号、连接方式、Windows 版本、程序版本和错误信息。设备路径可能包含序列号，公开日志前请遮盖序列号及其他个人信息。
+遇到错误时，在程序错误弹窗或底部“诊断日志”中点击“复制诊断日志”。点击“提交 Issue”会打开固定的 [GitHub 问题模板](https://github.com/Vex9th/mouse-control/issues/new?template=bug_report.yml)；填写鼠标型号、连接方式、程序与 Windows 版本、复现步骤和实际结果，再把报告粘贴到“诊断日志”栏，由你检查后提交。程序不会自动发送日志或创建 Issue。
+
+报告会自动脱敏，发布前仍请检查内容；无需填写账号、序列号或完整设备路径。若程序无法打开或无法复制报告，可在模板中说明情况。
+
+本地错误日志保存在单个 `%LOCALAPPDATA%\MouseControl\logs\error.log` 文件中，最多保留 20 条记录且不超过 128 KiB；连续重复错误合并并累计次数。日志保存失败时会明确提示，仍可复制当前内存中的诊断报告。
 
 维护者：[Vex9th](https://github.com/Vex9th)。协议资料参考 [OpenRazer](https://github.com/openrazer/openrazer)、[Logitech HID++ 文档](https://github.com/Logitech/cpg-docs)、[Solaar](https://github.com/pwr-Solaar/Solaar)、[libratbag](https://github.com/libratbag/libratbag) 、Linux HID 驱动和 [迈从官方网页驱动](https://www.mchose.com.cn/#/connectDevice)；固定版本与具体字段来源列在协议文档中。依赖与字体许可证见 [第三方许可](docs/THIRD_PARTY_NOTICES.txt)。
 
